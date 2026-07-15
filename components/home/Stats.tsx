@@ -34,32 +34,32 @@ function Counter({ end, suffix = "" }: { end: number; suffix?: string }) {
 
 const stats = [
   {
-    icon: <Users className="w-5 h-5" />,
+    icon: <Users className="w-5 h-5 text-blue-400" />,
     value: 15000,
     suffix: "+",
     label: "Happy Customers",
-    color: "text-blue-600 bg-blue-50 border-blue-100",
+    color: "text-blue-400 bg-white/5 border-white/10",
   },
   {
-    icon: <Package className="w-5 h-5" />,
+    icon: <Package className="w-5 h-5 text-emerald-400" />,
     value: 25000,
     suffix: "+",
     label: "Orders Delivered",
-    color: "text-emerald-600 bg-emerald-50 border-emerald-100",
+    color: "text-emerald-400 bg-white/5 border-white/10",
   },
   {
-    icon: <Award className="w-5 h-5" />,
+    icon: <Award className="w-5 h-5 text-amber-400" />,
     value: 15,
     suffix: "+",
     label: "Years Experience",
-    color: "text-amber-600 bg-amber-50 border-amber-100",
+    color: "text-amber-400 bg-white/5 border-white/10",
   },
   {
-    icon: <TrendingUp className="w-5 h-5" />,
+    icon: <TrendingUp className="w-5 h-5 text-rose-400" />,
     value: 500,
     suffix: "+",
     label: "Products Available",
-    color: "text-rose-600 bg-rose-50 border-rose-100",
+    color: "text-rose-400 bg-white/5 border-white/10",
   },
 ];
 

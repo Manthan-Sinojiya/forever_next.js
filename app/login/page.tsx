@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { Lock, Mail, ShieldCheck, ArrowRight } from "lucide-react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +50,8 @@ export default function LoginPage() {
       const role = localStorage.getItem("userRole");
       if (role === "admin") {
         router.push("/admin");
+      } else if (callbackUrl) {
+        router.push(callbackUrl);
       } else {
         router.push("/profile");
       }
@@ -168,5 +172,20 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-500 font-medium text-sm">Loading login portal...</p>
+        </div>
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }

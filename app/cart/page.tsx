@@ -1,16 +1,16 @@
 "use client";
 
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useCartStore } from "@/lib/store";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Truck, CreditCard, ChevronLeft, QrCode, Lock, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 
-export default function CartPage() {
+function CartPageContent() {
   const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -45,6 +45,8 @@ export default function CartPage() {
   const getTotalPrice = useCartStore((state) => state.getTotalPrice);
   const clearCart = useCartStore((state) => state.clearCart);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const checkoutParam = searchParams.get("checkout") === "true";
 
   useEffect(() => {
     setMounted(true);
@@ -66,6 +68,31 @@ export default function CartPage() {
       }
     };
   }, [session]);
+
+  // Enforce login on checkout parameter
+  useEffect(() => {
+    if (checkoutParam) {
+      const savedEmail = localStorage.getItem("userEmail") || session?.user?.email;
+      if (!savedEmail) {
+        alert("Please login first to proceed to checkout!");
+        router.push("/login?callbackUrl=/cart?checkout=true");
+      } else {
+        setIsCheckingOut(true);
+      }
+    } else {
+      setIsCheckingOut(false);
+    }
+  }, [checkoutParam, session, router]);
+
+  const handleProceedToCheckout = () => {
+    const savedEmail = localStorage.getItem("userEmail") || session?.user?.email;
+    if (!savedEmail) {
+      alert("Please login first to proceed to checkout!");
+      router.push("/login?callbackUrl=/cart?checkout=true");
+      return;
+    }
+    router.push("/cart?checkout=true");
+  };
 
   if (!mounted) return null;
 
@@ -575,7 +602,7 @@ export default function CartPage() {
 
                     {!isCheckingOut ? (
                       <button
-                        onClick={() => setIsCheckingOut(true)}
+                        onClick={handleProceedToCheckout}
                         className="w-full bg-slate-900 hover:bg-emerald-600 hover:shadow-emerald-600/10 text-white py-3.5 rounded-xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2 hover:shadow-lg"
                       >
                         Proceed to Checkout
@@ -728,5 +755,20 @@ export default function CartPage() {
         </div>
       )}
     </>
+  );
+}
+
+export default function CartPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-500 font-medium text-sm">Loading your cart...</p>
+        </div>
+      </div>
+    }>
+      <CartPageContent />
+    </Suspense>
   );
 }

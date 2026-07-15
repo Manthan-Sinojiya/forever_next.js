@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Poppins, Manrope } from "next/font/google";
 import "./globals.css";
 import ScrollProgress from "@/components/layout/ScrollProgress";
-import WhatsAppButton from "@/components/layout/WhatsAppButton";
 import SessionProvider from "@/components/providers/SessionProvider";
 import CartDrawer from "@/components/layout/CartDrawer";
 import ToastContainer from "@/components/layout/ToastContainer";
@@ -145,7 +144,6 @@ export default function RootLayout({
           <CartDrawer />
           <ToastContainer />
         </SessionProvider>
-        <WhatsAppButton />
       </body>
     </html>
   );
