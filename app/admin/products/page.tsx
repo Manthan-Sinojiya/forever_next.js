@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Edit, PackageSearch, X, Save, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit, PackageSearch, X, Save, Loader2, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
@@ -60,6 +60,7 @@ export default function AdminProductsPage() {
   const [formProduct, setFormProduct] = useState<ProductForm>(emptyForm);
   const [search, setSearch] = useState("");
   const [categories, setCategories] = useState<string[]>(predefinedCategories);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   const fetchProducts = async () => {
     try {
@@ -222,22 +223,52 @@ export default function AdminProductsPage() {
                     placeholder="e.g. Ashwagandha 500mg"
                   />
                 </div>
-                <div>
+                <div className="relative">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Category * (Type custom or select)</label>
-                  <input
-                    list="category-suggestions"
-                    required
-                    value={formProduct.category}
-                    onChange={(e) => setFormProduct({ ...formProduct, category: e.target.value })}
-                    type="text"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 outline-none text-sm font-medium"
-                    placeholder="e.g. Food Supplements"
-                  />
-                  <datalist id="category-suggestions">
-                    {categories.map((c) => (
-                      <option key={c} value={c} />
-                    ))}
-                  </datalist>
+                  <div className="relative">
+                    <input
+                      required
+                      value={formProduct.category}
+                      onChange={(e) => {
+                        setFormProduct({ ...formProduct, category: e.target.value });
+                        setShowCategoryDropdown(true);
+                      }}
+                      onFocus={() => setShowCategoryDropdown(true)}
+                      onBlur={() => {
+                        setTimeout(() => setShowCategoryDropdown(false), 200);
+                      }}
+                      type="text"
+                      className="w-full px-4 py-2.5 pr-10 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 outline-none text-sm font-medium"
+                      placeholder="e.g. Food Supplements"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650 cursor-pointer"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {showCategoryDropdown && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-150 border-slate-100 rounded-xl shadow-xl max-h-48 overflow-y-auto py-1">
+                      {categories.filter(c => c.toLowerCase().includes((formProduct.category || "").toLowerCase())).map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onMouseDown={() => {
+                            setFormProduct({ ...formProduct, category: c });
+                            setShowCategoryDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2.5 hover:bg-emerald-50 hover:text-emerald-700 text-slate-750 text-slate-700 text-sm transition-colors font-medium cursor-pointer"
+                        >
+                          {c}
+                        </button>
+                      ))}
+                      {categories.filter(c => c.toLowerCase().includes((formProduct.category || "").toLowerCase())).length === 0 && (
+                        <div className="px-4 py-2 text-xs text-slate-400 font-medium italic">New custom category</div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Price (₹) *</label>
