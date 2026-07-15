@@ -22,6 +22,7 @@ import {
   Truck,
   ArrowRight,
   ShieldCheck,
+  Loader2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -71,13 +72,14 @@ function ProfilePageContent() {
   const initialTab = searchParams.get("tab") || "Profile";
   const [activeTab, setActiveTab] = useState(initialTab);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Profile data
-  const [name, setName] = useState("John Doe");
-  const [email, setEmail] = useState("john@example.com");
-  const [phone, setPhone] = useState("+91 98765 43210");
-  const [city, setCity] = useState("Mumbai");
-  const [state, setState] = useState("Maharashtra");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [saving, setSaving] = useState(false);
   const [role, setRole] = useState("user");
 
@@ -169,6 +171,7 @@ function ProfilePageContent() {
       setEmail(savedEmail);
       loadProfile(savedEmail);
       loadOrders(savedEmail);
+      setCheckingAuth(false);
     } else {
       router.push("/login");
     }
@@ -248,6 +251,19 @@ function ProfilePageContent() {
     { name: "Offers", icon: <TrendingUp className="w-4 h-4" />, label: "Top Offers" },
     { name: "Rewards", icon: <Award className="w-4 h-4" />, label: "Rewards" },
   ];
+
+  if (checkingAuth) {
+    return (
+      <>
+        <Navbar />
+        <main className="flex-1 w-full bg-slate-50 min-h-screen flex flex-col items-center justify-center py-24">
+          <Loader2 className="w-10 h-10 animate-spin text-emerald-650 text-emerald-600 mb-4" />
+          <p className="text-slate-500 font-medium text-sm">Verifying session...</p>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
