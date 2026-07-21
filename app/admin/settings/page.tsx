@@ -267,7 +267,7 @@ export default function AdminSettings() {
         .animate-marquee {
           animation: marquee linear infinite;
         }
-      </style>
+      `}</style>
     </>
   );
 }
