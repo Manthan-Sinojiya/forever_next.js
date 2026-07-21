@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
     const settings = await Setting.find({});
     return NextResponse.json({ success: true, data: settings }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: "Failed to fetch settings" }, { status: 400 });
   }
 }
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       { upsert: true, new: true }
     );
     return NextResponse.json({ success: true, data: setting }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: "Failed to save settings" }, { status: 400 });
   }
 }

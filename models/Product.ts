@@ -1,42 +1,70 @@
-import mongoose, { Document, Model, Schema } from "mongoose";
-
-export interface IProductSize {
-  name: string;
-  price: number;
-  originalPrice?: number;
-  stock?: number;
-}
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IProduct extends Document {
   name: string;
-  slug?: string;
-  description: string;
-  price: number;
-  category: mongoose.Types.ObjectId | string;
-  brand?: mongoose.Types.ObjectId | string;
-  imageUrl: string;
-  imageGallery?: string[];
-  videoUrl?: string;
-  inStock: boolean;
-  stockCount: number;
-  featured: boolean;
-  rating: number;
-  numReviews: number;
-  todayDeal: boolean;
-  originalPrice?: number;
-  sizes?: IProductSize[];
+  slug: string;
+  sku?: string;
+  category?: mongoose.Types.ObjectId;
+  subCategory?: string;
+  brand?: mongoose.Types.ObjectId;
+  tags: string[];
   
-  highlights?: string[];
+  // Pricing & Stock
+  mrp: number; // compareAtPrice
+  price: number; // salePrice
+  gst?: number;
+  inventory: number;
+  inStock: boolean;
+  
+  // Physical Details
+  weight?: string;
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+  };
+  
+  // CMS Fields (Healthcare specific)
+  description?: string;
+  shortDescription?: string;
   ingredients?: string;
   benefits?: string;
   howToUse?: string;
-  whoShouldUse?: string;
-  nutritionTable?: Record<string, string>;
+  storage?: string;
   
-  seoTitle?: string;
-  seoDescription?: string;
-  seoKeywords?: string;
-  imageAlt?: string;
+  thumbnail?: string;
+  images: {
+    url: string;
+    publicId?: string;
+    alt?: string;
+  }[];
+  video?: string;
+  
+  // Marketing & Flags
+  status: "active" | "draft" | "archived";
+  isFeatured: boolean;
+  isTrending: boolean;
+  isBestSeller: boolean;
+  isNewArrival: boolean;
+  
+  // Variants
+  variants: {
+    attribute: string; // e.g., 'Size', 'Color', 'Flavor'
+    value: string;     // e.g., '500g', 'Red', 'Chocolate'
+    price: number;
+    inventory: number;
+    sku?: string;
+  }[];
+  
+  // Relations
+  relatedProducts: mongoose.Types.ObjectId[];
+  crossSellProducts: mongoose.Types.ObjectId[];
+  upSellProducts: mongoose.Types.ObjectId[];
+  
+  // SEO
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
   
   createdAt: Date;
   updatedAt: Date;
@@ -45,44 +73,76 @@ export interface IProduct extends Document {
 const ProductSchema = new Schema<IProduct>(
   {
     name: { type: String, required: true },
-    slug: { type: String, sparse: true, unique: true },
-    description: { type: String, required: true },
-    price: { type: Number, required: true },
-    category: { type: Schema.Types.Mixed, required: true },
+    slug: { type: String, required: true, unique: true },
+    sku: { type: String },
+    category: { type: Schema.Types.ObjectId, ref: "Category" },
+    subCategory: { type: String },
     brand: { type: Schema.Types.ObjectId, ref: "Brand" },
-    imageUrl: { type: String, required: true },
-    imageGallery: { type: [String], default: [] },
-    videoUrl: { type: String },
+    tags: [{ type: String }],
+    
+    mrp: { type: Number, required: true },
+    price: { type: Number },
+    gst: { type: Number },
+    inventory: { type: Number, default: 0 },
     inStock: { type: Boolean, default: true },
-    stockCount: { type: Number, default: 0 },
-    featured: { type: Boolean, default: false },
-    todayDeal: { type: Boolean, default: false },
-    originalPrice: { type: Number },
-    rating: { type: Number, default: 5 },
-    numReviews: { type: Number, default: 0 },
-    sizes: {
-      type: [
-        {
-          name: { type: String, required: true },
-          price: { type: Number, required: true },
-          originalPrice: { type: Number },
-          stock: { type: Number, default: 0 },
-        }
-      ],
-      default: []
+    
+    weight: { type: String },
+    dimensions: {
+      length: { type: Number },
+      width: { type: Number },
+      height: { type: Number }
     },
-    highlights: { type: [String], default: [] },
+    
+    description: { type: String },
+    shortDescription: { type: String },
     ingredients: { type: String },
     benefits: { type: String },
     howToUse: { type: String },
-    whoShouldUse: { type: String },
-    nutritionTable: { type: Schema.Types.Mixed },
-    seoTitle: { type: String },
-    seoDescription: { type: String },
-    seoKeywords: { type: String },
-    imageAlt: { type: String },
+    storage: { type: String },
+    
+    thumbnail: { type: String },
+    images: [
+      {
+        url: { type: String, required: true },
+        publicId: { type: String },
+        alt: { type: String },
+      },
+    ],
+    video: { type: String },
+    
+    status: {
+      type: String,
+      enum: ["active", "draft", "archived"],
+      default: "draft",
+    },
+    isFeatured: { type: Boolean, default: false },
+    isTrending: { type: Boolean, default: false },
+    isBestSeller: { type: Boolean, default: false },
+    isNewArrival: { type: Boolean, default: false },
+    
+    variants: [
+      {
+        attribute: { type: String },
+        value: { type: String },
+        price: { type: Number },
+        inventory: { type: Number, default: 0 },
+        sku: { type: String }
+      }
+    ],
+    
+    relatedProducts: [{ type: Schema.Types.ObjectId, ref: "Product" }],
+    crossSellProducts: [{ type: Schema.Types.ObjectId, ref: "Product" }],
+    upSellProducts: [{ type: Schema.Types.ObjectId, ref: "Product" }],
+    
+    metaTitle: { type: String },
+    metaDescription: { type: String },
+    metaKeywords: { type: String },
   },
   { timestamps: true }
 );
 
-export default (mongoose.models.Product as Model<IProduct>) || mongoose.model<IProduct>("Product", ProductSchema);
+const Product: Model<IProduct> =
+  mongoose.models.Product || mongoose.model<IProduct>("Product", ProductSchema);
+
+export { Product };
+export default Product;

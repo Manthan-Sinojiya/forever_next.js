@@ -288,7 +288,7 @@ export default function ShopClient({ presetCategory = "", presetQuery = "" }: { 
         {/* Desktop Sidebar */}
         <aside className="hidden lg:block w-72 shrink-0">
           <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-            <FilterSidebar />
+            {FilterSidebar({})}
           </div>
         </aside>
 
@@ -485,7 +485,7 @@ export default function ShopClient({ presetCategory = "", presetQuery = "" }: { 
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <FilterSidebar mobile />
+              {FilterSidebar({ mobile: true })}
               <div className="grid grid-cols-2 gap-3 mt-auto pt-4 border-t border-slate-100">
                 <button onClick={handleReset} className="py-3 bg-slate-100 rounded-xl text-slate-700 font-bold text-sm">Reset</button>
                 <button onClick={() => setShowMobileFilters(false)} className="py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm">Apply</button>

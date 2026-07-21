@@ -8,6 +8,8 @@ export interface ICoupon extends mongoose.Document {
   description: string;
   expiryDate: string;
   isActive: boolean;
+  usageLimit?: number;
+  usedCount: number;
 }
 
 const CouponSchema = new mongoose.Schema<ICoupon>(
@@ -19,6 +21,8 @@ const CouponSchema = new mongoose.Schema<ICoupon>(
     description: { type: String, required: true },
     expiryDate: { type: String, required: true },
     isActive: { type: Boolean, default: true },
+    usageLimit: { type: Number, default: null },
+    usedCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

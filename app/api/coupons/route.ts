@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     
     const coupons = await Coupon.find({}).sort({ createdAt: -1 });
     return NextResponse.json({ success: true, data: coupons }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: "Failed to fetch coupons" }, { status: 400 });
   }
 }
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     await dbConnect();
     const coupon = await Coupon.create(body);
     return NextResponse.json({ success: true, data: coupon }, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: "Failed to create coupon" }, { status: 400 });
   }
 }

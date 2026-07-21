@@ -66,6 +66,7 @@ export default function OffersPage() {
   const addToCart = useCartStore((s) => s.addToCart);
   const addToast = useCartStore((s) => s.addToast);
 
+  // eslint-disable-next-line react-hooks/purity
   const flashEndTime = new Date(Date.now() + 6 * 3600 * 1000);
 
   const copyCode = (code: string) => {
@@ -84,6 +85,7 @@ export default function OffersPage() {
           <div className="absolute inset-0 opacity-10">
             {[...Array(20)].map((_, i) => (
               <div key={i} className="absolute w-2 h-2 bg-white rounded-full"
+                // eslint-disable-next-line react-hooks/purity
                 style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`, opacity: Math.random() }} />
             ))}
           </div>

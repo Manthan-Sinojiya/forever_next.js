@@ -65,7 +65,7 @@ const STATIC_DEALS: Product[] = [
 ];
 
 // Helper to determine claimed percentages and items left in a stable way
-function getClaimedStats(price: number, id: string) {
+function getClaimedStats(price: number, _id: string) {
   const hash = (price * 7) % 35;
   const claimed = 50 + hash; // 50% - 85%
   const left = Math.max(5, Math.round((price * 3) % 25));

@@ -6,6 +6,7 @@ import SessionProvider from "@/components/providers/SessionProvider";
 import CartDrawer from "@/components/layout/CartDrawer";
 import ToastContainer from "@/components/layout/ToastContainer";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
+import Providers from "./providers";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -140,12 +141,14 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
         <ScrollProgress />
-        <SessionProvider>
-          {children}
-          <CartDrawer />
-          <ToastContainer />
-          <WhatsAppButton />
-        </SessionProvider>
+        <Providers>
+          <SessionProvider>
+            {children}
+            <CartDrawer />
+            <ToastContainer />
+            <WhatsAppButton />
+          </SessionProvider>
+        </Providers>
       </body>
     </html>
   );

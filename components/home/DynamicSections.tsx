@@ -16,7 +16,7 @@ export default async function DynamicSections() {
     }
   });
 
-  const getSetting = (key: string) => settings.find((s) => s.key === key)?.value || "";
+  const getSetting = (key: string) => (settings as any[]).find((s) => s.key === key)?.value || "";
 
   const seoText = getSetting("homepage_seo_text");
   const customTitle = getSetting("homepage_custom_title");

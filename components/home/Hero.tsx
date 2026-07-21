@@ -47,7 +47,7 @@ const FALLBACK_SLIDES: Slide[] = [
 ];
 
 export default function Hero() {
-  const [slides, setSlides] = useState<Slide[]>(FALLBACK_SLIDES);
+  const [slides] = useState<Slide[]>(FALLBACK_SLIDES);
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {

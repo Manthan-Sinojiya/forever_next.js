@@ -136,11 +136,7 @@ export default function ProductsGridClient({
       });
   }, [initialProducts, searchVal, selectedCategory, maxPriceFilter, sortBy]);
 
-  // Get original price for visual discount
-  const getOriginalPrice = (price: number) => {
-    const pct = 25 + ((price * 7) % 15); // deterministic based on price (25% to 40% markup)
-    return Math.round(price * (1 + pct / 100));
-  };
+
 
   const handleResetFilters = () => {
     setSearchVal("");

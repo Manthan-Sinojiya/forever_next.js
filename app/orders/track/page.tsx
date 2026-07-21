@@ -104,7 +104,7 @@ export default function OrderTrackingPage() {
           setNotFound(true);
         }
       }
-    } catch (err) {
+    } catch {
       if (trackId.trim().toLowerCase() === "fhc-2025-00142" || trackId.trim().toLowerCase() === "demo") {
         setOrder(MOCK_ORDER);
       } else {

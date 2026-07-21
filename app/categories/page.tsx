@@ -38,7 +38,7 @@ export default function CategoriesPage() {
 
         <div className="container mx-auto px-4 py-12">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {CATEGORIES.map((cat, i) => (
+            {CATEGORIES.map((cat) => (
               <Link key={cat.slug} href={`/categories/${cat.slug}`}
                 className="group bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all">
                 {/* Gradient Header */}

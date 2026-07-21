@@ -77,7 +77,7 @@ function ProfileContent() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
-  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [addresses] = useState<Address[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 

@@ -1,16 +1,35 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface ISetting extends Document {
-  key: string;
-  value: string;
+  storeName: string;
+  storeEmail: string;
+  storePhone: string;
+  currency: string;
+  socialLinks: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+  };
+  address: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const SettingSchema: Schema = new Schema(
+const SettingSchema = new Schema<ISetting>(
   {
-    key: { type: String, required: true, unique: true },
-    value: { type: String, required: true },
+    storeName: { type: String, required: true },
+    storeEmail: { type: String, required: true },
+    storePhone: { type: String },
+    currency: { type: String, default: "USD" },
+    socialLinks: {
+      facebook: { type: String },
+      instagram: { type: String },
+      twitter: { type: String },
+    },
+    address: { type: String },
   },
   { timestamps: true }
 );
 
-export default mongoose.models.Setting || mongoose.model<ISetting>("Setting", SettingSchema);
+export const Setting = (mongoose.models.Setting as Model<ISetting>) || mongoose.model<ISetting>("Setting", SettingSchema);
+export default Setting;

@@ -91,7 +91,7 @@ const getCategoryBadgeIcon = (title: string, textColor: string) => {
 
 export default function Categories() {
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  
 
   // Typewriter loop states
   const [currentText, setCurrentText] = useState("");
@@ -124,7 +124,7 @@ export default function Categories() {
 
     timer = setTimeout(handleTyping, typeSpeed);
     return () => clearTimeout(timer);
-  }, [currentText, isDeleting]);
+  }, [currentText, isDeleting, fullText]);
 
   const showWord1 = currentText.substring(0, word1.length);
   const showWord2 = currentText.length > word1.length
@@ -149,12 +149,7 @@ export default function Categories() {
     fetchCounts();
   }, []);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveImageIndex((prev) => (prev === 0 ? 1 : 0));
-    }, 3000);
-    return () => clearInterval(timer);
-  }, []);
+
 
   return (
     <section className="py-20 bg-white relative overflow-hidden">

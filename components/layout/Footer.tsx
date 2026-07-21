@@ -30,7 +30,7 @@ export default function Footer() {
   const [categories, setCategories] = useState<{ href: string; label: string }[]>([]);
 
   useEffect(() => {
-    fetch("/api/admin/categories")
+    fetch("/api/categories")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.data) {

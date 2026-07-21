@@ -1,5 +1,5 @@
 import dbConnect from "@/lib/mongodb";
-import Product from "@/models/Product";
+import { Product } from "@/models/Product";
 import Blog from "@/models/Blog";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Review from "@/models/Review";
-import Product from "@/models/Product";
+import { Product } from "@/models/Product";
 
 export async function GET() {
   try {

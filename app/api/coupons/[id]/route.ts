@@ -11,7 +11,7 @@ export async function DELETE(
     const { id } = await params;
     await Coupon.findByIdAndDelete(id);
     return NextResponse.json({ success: true, message: "Coupon deleted" }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: "Failed to delete coupon" }, { status: 400 });
   }
 }
@@ -26,7 +26,7 @@ export async function PUT(
     const body = await request.json();
     const updatedCoupon = await Coupon.findByIdAndUpdate(id, body, { new: true });
     return NextResponse.json({ success: true, data: updatedCoupon }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: "Failed to update coupon" }, { status: 400 });
   }
 }

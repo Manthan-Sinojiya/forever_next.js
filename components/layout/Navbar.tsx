@@ -74,7 +74,7 @@ export default function Navbar() {
       })
       .catch((err) => console.error("Error loading announcement settings:", err));
 
-    fetch("/api/admin/categories")
+    fetch("/api/categories")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.data) {

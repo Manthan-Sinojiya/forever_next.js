@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
-import Product from "@/models/Product";
+import { Product } from "@/models/Product";
 
 export async function GET() {
   try {
@@ -22,7 +22,7 @@ export async function GET() {
     }, {});
 
     return NextResponse.json({ success: true, counts: result }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: "Failed to get category counts" }, { status: 450 });
   }
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
-import Product from "@/models/Product";
+import { Product } from "@/models/Product";
 import Coupon from "@/models/Coupon";
 import HeroSlide from "@/models/HeroSlide";
 import bcrypt from "bcryptjs";

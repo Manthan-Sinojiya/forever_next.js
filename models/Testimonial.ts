@@ -1,30 +1,43 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface ITestimonial extends Document {
-  name: string;
-  location: string;
+  customerName: string;
   rating: number;
-  text: string;
-  type: "text" | "video";
-  thumbnail?: string;
+  customerImage?: string;
+  designation?: string;
+  company?: string;
+  review: string;
+  status: "active" | "draft" | "archived";
+  isFeatured: boolean;
+  sortOrder: number;
+  
+  // Video fields
+  videoType?: "upload" | "youtube" | "vimeo";
   videoUrl?: string;
-  isActive: boolean;
+  videoThumbnail?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const TestimonialSchema = new Schema<ITestimonial>(
   {
-    name: { type: String, required: true },
-    location: { type: String, required: true },
+    customerName: { type: String, required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
-    text: { type: String, required: true },
-    type: { type: String, enum: ["text", "video"], default: "text" },
-    thumbnail: { type: String },
+    review: { type: String, required: true },
+    customerImage: { type: String },
+    designation: { type: String },
+    company: { type: String },
+    
+    status: { type: String, enum: ["active", "draft", "archived"], default: "draft" },
+    isFeatured: { type: Boolean, default: false },
+    sortOrder: { type: Number, default: 0 },
+    
+    videoType: { type: String, enum: ["upload", "youtube", "vimeo"] },
     videoUrl: { type: String },
-    isActive: { type: Boolean, default: true },
+    videoThumbnail: { type: String },
   },
   { timestamps: true }
 );
 
-export default (mongoose.models.Testimonial as Model<ITestimonial>) || mongoose.model<ITestimonial>("Testimonial", TestimonialSchema);
+export const Testimonial = (mongoose.models.Testimonial as Model<ITestimonial>) || mongoose.model<ITestimonial>("Testimonial", TestimonialSchema);
+export default Testimonial;

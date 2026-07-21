@@ -5,6 +5,8 @@ export interface IContactMessage extends mongoose.Document {
   email: string;
   subject: string;
   message: string;
+  status: "new" | "read" | "replied";
+  repliedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,6 +17,8 @@ const ContactMessageSchema = new mongoose.Schema<IContactMessage>(
     email: { type: String, required: true },
     subject: { type: String, required: true },
     message: { type: String, required: true },
+    status: { type: String, enum: ["new", "read", "replied"], default: "new" },
+    repliedAt: { type: Date },
   },
   { timestamps: true }
 );

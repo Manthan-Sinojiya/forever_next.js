@@ -64,15 +64,7 @@ function LoginPageContent() {
     }
   };
 
-  const handleAdminLoginDemo = (e: React.MouseEvent) => {
-    e.preventDefault();
-    // Keep local bypass for testing and demo purposes
-    localStorage.setItem("userRole", "admin");
-    localStorage.setItem("userName", "Admin Demo");
-    localStorage.setItem("userEmail", "admin@foreverhealthcare.in");
-    window.dispatchEvent(new Event("storage"));
-    router.push("/admin");
-  };
+
 
   return (
     <main className="min-h-screen w-full flex bg-[#F8FAFC] overflow-hidden">

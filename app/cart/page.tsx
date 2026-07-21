@@ -84,7 +84,7 @@ function CartPageContent() {
     } else {
       setIsCheckingOut(false);
     }
-  }, [checkoutParam, session, router]);
+  }, [checkoutParam, session, router, addToast]);
 
   const handleProceedToCheckout = () => {
     const savedEmail = localStorage.getItem("userEmail") || session?.user?.email;
@@ -128,7 +128,7 @@ function CartPageContent() {
       } else {
         setCouponError(data.message || "Invalid or expired coupon.");
       }
-    } catch (err) {
+    } catch {
       setCouponError("Error validating coupon. Please try again.");
     } finally {
       setCouponLoading(false);

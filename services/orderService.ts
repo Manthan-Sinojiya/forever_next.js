@@ -40,9 +40,9 @@ export async function updateOrder(id: string, data: Partial<IOrder>) {
   
   const updatedOrder = await Order.findByIdAndUpdate(id, data, { new: true });
   
-  if (updatedOrder && data.status) {
+  if (updatedOrder && data.orderStatus) {
     // Asynchronously send status update email
-    sendOrderStatusUpdateEmail(updatedOrder, data.status).catch(err => {
+    sendOrderStatusUpdateEmail(updatedOrder, data.orderStatus).catch(err => {
       console.error("Failed to send status update email:", err);
     });
   }

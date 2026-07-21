@@ -1,5 +1,5 @@
 import dbConnect from "@/lib/mongodb";
-import Product from "@/models/Product";
+import { Product } from "@/models/Product";
 import ProductDetailsClient from "./ProductDetailsClient";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         description: product.description || "Premium health and wellness product.",
       };
     }
-  } catch (e) {
+  } catch {
     // Silently fall back
   }
   return {

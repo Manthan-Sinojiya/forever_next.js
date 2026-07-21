@@ -1,0 +1,43 @@
+
+> forever-healthcare@0.1.0 lint
+> eslint
+
+
+/home/sinojiya-manthan/Desktop/Forver/forever-healthcare/app/about/page.tsx
+  86:20  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-img-element')
+
+/home/sinojiya-manthan/Desktop/Forver/forever-healthcare/app/admin/cms/CmsClient.tsx
+  4:10  error  'useRouter' is defined but never used  unused-imports/no-unused-imports
+
+/home/sinojiya-manthan/Desktop/Forver/forever-healthcare/app/brands/page.tsx
+  103:27  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-img-element')
+
+/home/sinojiya-manthan/Desktop/Forver/forever-healthcare/app/compare/page.tsx
+  136:26  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-img-element')
+  174:26  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-img-element')
+
+/home/sinojiya-manthan/Desktop/Forver/forever-healthcare/app/offers/page.tsx
+  129:24  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-img-element')
+  191:26  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-img-element')
+
+/home/sinojiya-manthan/Desktop/Forver/forever-healthcare/app/orders/track/page.tsx
+  288:26  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-img-element')
+
+/home/sinojiya-manthan/Desktop/Forver/forever-healthcare/app/products/[id]/ProductDetailsClient.tsx
+  245:9  error  'toggleWishlist' is assigned a value but never used. Allowed unused vars must match /^_/u  unused-imports/no-unused-vars
+  246:9  error  'wishlist' is assigned a value but never used. Allowed unused vars must match /^_/u        unused-imports/no-unused-vars
+  305:9  error  'originalPrice' is assigned a value but never used. Allowed unused vars must match /^_/u   unused-imports/no-unused-vars
+  378:9  error  'richDesc' is assigned a value but never used. Allowed unused vars must match /^_/u        unused-imports/no-unused-vars
+
+/home/sinojiya-manthan/Desktop/Forver/forever-healthcare/app/profile/page.tsx
+  345:34  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-img-element')
+
+/home/sinojiya-manthan/Desktop/Forver/forever-healthcare/app/shop/ShopClient.tsx
+  404:24  warning  Unused eslint-disable directive (no problems were reported from '@next/next/no-img-element')
+
+/home/sinojiya-manthan/Desktop/Forver/forever-healthcare/components/home/Categories.tsx
+  127:6  warning  React Hook useEffect has a missing dependency: 'fullText'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 15 problems (5 errors, 10 warnings)
+  1 error and 9 warnings potentially fixable with the `--fix` option.
+

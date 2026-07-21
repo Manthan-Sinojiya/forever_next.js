@@ -242,8 +242,6 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
   const cart = useCartStore((state) => state.cart);
   const addToCart = useCartStore((state) => state.addToCart);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
-  const toggleWishlist = useCartStore((state) => state.toggleWishlist);
-  const wishlist = useCartStore((state) => state.wishlist || []);
 
   const fetchReviews = async () => {
     try {
@@ -300,9 +298,9 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
   const cartItemId = product._id + (selectedSize ? `-${selectedSize}` : "");
   const cartItem = cart.find((item) => item._id === cartItemId);
   const cartQty = cartItem ? cartItem.quantity : 0;
-  const isInWishlist = wishlist.some((item) => item._id === product._id);
 
-  const originalPrice = currentOriginalPrice;
+
+
 
   // Add sized item helper
   const handleAddToCart = () => {
@@ -375,9 +373,6 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
   const catTheme = getCategoryColorTheme(product.category);
   const catDetails = getCategoryDetails(product.category);
   const sku = getProductSKU(product);
-  const richDesc = product.description
-    ? { title: product.name, p1: product.description, p2: "" }
-    : getRichDescription(product);
 
   // Avatar Style helpers
   const getInitials = (name: string) => {

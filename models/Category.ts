@@ -5,7 +5,8 @@ export interface ICategory extends Document {
   slug: string;
   description?: string;
   image?: string;
-  isActive: boolean;
+  parentCategory?: mongoose.Types.ObjectId;
+  status: "active" | "draft" | "archived";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,9 +17,11 @@ const CategorySchema = new Schema<ICategory>(
     slug: { type: String, required: true, unique: true },
     description: { type: String },
     image: { type: String },
-    isActive: { type: Boolean, default: true },
+    parentCategory: { type: Schema.Types.ObjectId, ref: "Category" },
+    status: { type: String, enum: ["active", "draft", "archived"], default: "draft" },
   },
   { timestamps: true }
 );
 
-export default (mongoose.models.Category as Model<ICategory>) || mongoose.model<ICategory>("Category", CategorySchema);
+export const Category = (mongoose.models.Category as Model<ICategory>) || mongoose.model<ICategory>("Category", CategorySchema);
+export default Category;

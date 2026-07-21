@@ -1,11 +1,12 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Model, Schema } from "mongoose";
 
-export interface IUser extends mongoose.Document {
+export interface IUser extends Document {
   name: string;
   email: string;
   password?: string;
-  role: "user" | "admin";
   phone?: string;
+  role: "user" | "admin";
+  status: "active" | "inactive" | "banned";
   address?: string;
   city?: string;
   state?: string;
@@ -14,13 +15,14 @@ export interface IUser extends mongoose.Document {
   updatedAt: Date;
 }
 
-const UserSchema = new mongoose.Schema<IUser>(
+const UserSchema = new Schema<IUser>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, index: true },
-    password: { type: String }, // Optional for OAuth users
-    role: { type: String, enum: ["user", "admin"], default: "user" },
+    password: { type: String },
     phone: { type: String },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
+    status: { type: String, enum: ["active", "inactive", "banned"], default: "active" },
     address: { type: String },
     city: { type: String },
     state: { type: String },
@@ -29,4 +31,5 @@ const UserSchema = new mongoose.Schema<IUser>(
   { timestamps: true }
 );
 
-export default mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
+export const User = (mongoose.models.User as Model<IUser>) || mongoose.model<IUser>("User", UserSchema);
+export default User;
