@@ -1,23 +1,16 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { useState, useMemo, useEffect, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Star,
-  Heart,
-  ShoppingCart,
-  Minus,
-  Plus,
   SlidersHorizontal,
   X,
   Search,
   Filter,
   ArrowUpDown,
-  Zap,
 } from "lucide-react";
 import { useCartStore } from "@/lib/store";
+import ProductCard from "@/components/products/ProductCard";
 
 interface Product {
   _id: string;
@@ -42,13 +35,11 @@ export default function ProductsGridClient({
   presetCategory,
   presetQuery,
 }: ProductsGridClientProps) {
-  const [mounted, setMounted] = useState(false);
   const [searchVal, setSearchVal] = useState(presetQuery || "");
   const [selectedCategory, setSelectedCategory] = useState(presetCategory || "All");
   const [sortBy, setSortBy] = useState("default");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Sync state when props change (especially preset category/query)
   useEffect(() => {
     if (presetCategory) setSelectedCategory(presetCategory);
   }, [presetCategory]);
@@ -70,17 +61,18 @@ export default function ProductsGridClient({
     setMaxPriceFilter(maxProductPrice);
   }, [maxProductPrice]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   // Cart / Wishlist state from Zustand
   const cart = useCartStore((state) => state.cart);
   const addToCart = useCartStore((state) => state.addToCart);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
-  const removeFromCart = useCartStore((state) => state.removeFromCart);
   const toggleWishlist = useCartStore((state) => state.toggleWishlist);
   const wishlist = useCartStore((state) => state.wishlist || []);
+
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   const getCartQty = (productId: string) => {
     const item = cart.find((i) => i._id === productId);
@@ -91,7 +83,7 @@ export default function ProductsGridClient({
     return wishlist.some((item) => item._id === productId);
   };
 
-  const handleWishlist = (e: React.MouseEvent, product: any) => {
+  const handleWishlist = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
     toggleWishlist(product);
@@ -145,7 +137,7 @@ export default function ProductsGridClient({
   }, [initialProducts, searchVal, selectedCategory, maxPriceFilter, sortBy]);
 
   // Get original price for visual discount
-  const getOriginalPrice = (price: number, id: string) => {
+  const getOriginalPrice = (price: number) => {
     const pct = 25 + ((price * 7) % 15); // deterministic based on price (25% to 40% markup)
     return Math.round(price * (1 + pct / 100));
   };
@@ -375,135 +367,19 @@ export default function ProductsGridClient({
               <AnimatePresence mode="popLayout">
                 {filteredProducts.map((product) => {
                   const cartQty = getCartQty(product._id);
-                  const inCart = cartQty > 0;
                   const isWish = isInWishlist(product._id);
-                  const origPrice = getOriginalPrice(product.price, product._id);
-                  const discount = Math.round(((origPrice - product.price) / origPrice) * 100);
 
                   return (
-                    <motion.div
+                    <ProductCard
                       key={product._id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.96 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.96 }}
-                      transition={{ duration: 0.2 }}
-                      className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group flex flex-col relative"
-                    >
-                      <Link href={`/products/${product._id}`} className="flex flex-col flex-1 cursor-pointer">
-                        {/* Image container */}
-                        <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-4 bg-slate-50 border border-slate-100">
-                          <Image
-                            src={product.imageUrl}
-                            alt={product.name}
-                            fill
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 33vw, 25vw"
-                            className="object-cover group-hover:scale-105 transition-transform duration-700"
-                          />
-                          
-                          {/* Badges */}
-                          <div className="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-emerald-650 text-emerald-600 shadow-sm border border-slate-100 truncate max-w-[130px]">
-                            {product.category}
-                          </div>
-
-                          {discount > 0 && (
-                            <div className="absolute bottom-2.5 left-2.5 bg-red-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded shadow-sm">
-                              -{discount}%
-                            </div>
-                          )}
-
-                          {/* Wishlist toggle */}
-                          <button
-                            onClick={(e) => handleWishlist(e, product)}
-                            className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-xl flex items-center justify-center transition-all shadow-sm ${
-                              isWish
-                                ? "bg-red-500 text-white"
-                                : "bg-white/95 backdrop-blur-sm text-slate-400 hover:text-red-500"
-                            }`}
-                            aria-label="Toggle Wishlist"
-                          >
-                            <Heart className="w-4 h-4" fill={isWish ? "currentColor" : "none"} />
-                          </button>
-                        </div>
-
-                        {/* Content */}
-                        <div className="px-1 flex-1 flex flex-col">
-                          {/* Rating */}
-                          <div className="flex items-center gap-1 mb-2">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-3 h-3 ${
-                                  i < Math.floor(product.rating || 5)
-                                    ? "text-amber-400 fill-amber-400"
-                                    : "text-slate-200"
-                                }`}
-                              />
-                            ))}
-                            <span className="text-[10px] font-bold text-slate-500 ml-1">
-                              ({product.rating || 5}.0)
-                            </span>
-                          </div>
-
-                          {/* Product Title */}
-                          <h3 className="text-sm font-bold font-heading text-slate-800 mb-2 line-clamp-2 leading-snug">
-                            {product.name}
-                          </h3>
-
-                          {/* Price Area */}
-                          <div className="flex items-baseline gap-1.5 mt-auto mb-4">
-                            <span className="text-lg font-black text-slate-855 text-slate-900 font-heading">
-                              ₹{product.price.toFixed(0)}
-                            </span>
-                            {origPrice > product.price && (
-                              <span className="text-xs text-slate-400 line-through font-medium">
-                                ₹{origPrice.toFixed(0)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-
-                      {/* Cart buttons */}
-                      <div className="mt-auto">
-                        {!inCart ? (
-                          <button
-                            onClick={() => addToCart(product)}
-                            className="w-full py-2.5 bg-emerald-60 hover:bg-emerald-600 bg-emerald-50 hover:text-white text-emerald-600 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 border border-emerald-100"
-                          >
-                            <ShoppingCart className="w-3.5 h-3.5" />
-                            Add to Cart
-                          </button>
-                        ) : (
-                          <div className="flex items-center justify-between gap-1">
-                            <button
-                              onClick={() => updateQuantity(product._id, cartQty - 1)}
-                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 font-bold transition-all active:scale-95 border border-red-100"
-                              aria-label="Decrease quantity"
-                            >
-                              {cartQty <= 1 ? (
-                                <Minus className="w-3.5 h-3.5" />
-                              ) : (
-                                <Minus className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-
-                            <div className="flex-1 text-center">
-                              <span className="text-xs font-extrabold text-slate-800">{cartQty}</span>
-                              <p className="text-[8px] text-slate-405 text-slate-400 leading-none">in cart</p>
-                            </div>
-
-                            <button
-                              onClick={() => updateQuantity(product._id, cartQty + 1)}
-                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold transition-all active:scale-95 border border-emerald-100"
-                              aria-label="Increase quantity"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
+                      product={product}
+                      cartQty={cartQty}
+                      isWishlisted={isWish}
+                      onWishlistToggle={(e) => handleWishlist(e, product)}
+                      onAddToCart={() => addToCart(product)}
+                      onIncreaseQty={() => updateQuantity(product._id, cartQty + 1)}
+                      onDecreaseQty={() => updateQuantity(product._id, cartQty - 1)}
+                    />
                   );
                 })}
               </AnimatePresence>

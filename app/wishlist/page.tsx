@@ -1,100 +1,84 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useCartStore } from "@/lib/store";
-import { Trash2, HeartOff, ShoppingCart, Heart, ArrowRight } from "lucide-react";
-import Image from "next/image";
+import ProductCard from "@/components/products/ProductCard";
+import { HeartOff, Heart, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+
+function useIsMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
 
 export default function WishlistPage() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsMounted();
   const wishlist = useCartStore((state) => state.wishlist || []);
   const toggleWishlist = useCartStore((state) => state.toggleWishlist);
   const addToCart = useCartStore((state) => state.addToCart);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!mounted) return null;
 
   return (
     <>
       <Navbar />
-      <main className="flex-1 w-full">
-        {/* Page Header */}
-        <section className="bg-gradient-to-br from-[#EAF8F2] via-[#EEF4FB] to-[#F8FAFC] pt-12 lg:pt-16 pb-6 lg:pb-8 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(#1E5AA8_0.5px,transparent_0.5px)] [background-size:24px_24px] opacity-[0.02]" />
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 border border-primary/10 text-primary text-sm font-semibold mb-5">
-              <Heart className="w-4 h-4 text-danger fill-danger" />
-              Saved Items
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold font-heading text-foreground mb-4">
-              My <span className="gradient-text">Wishlist</span>
-            </h1>
-            <p className="text-muted text-lg max-w-xl mx-auto">
-              {wishlist.length > 0
-                ? `You have ${wishlist.length} item${wishlist.length > 1 ? "s" : ""} saved to your wishlist`
-                : "Keep track of products you love."}
-            </p>
+      <main className="flex-1 w-full bg-[#F8FAFC] min-h-screen">
+        {/* Banner */}
+        <div className="bg-gradient-to-r from-[#1E5AA8] to-[#43B97F] text-white py-12 md:py-16">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm shadow-inner">
+                <Heart className="w-7 h-7 text-white fill-white" />
+              </div>
+              <h1 className="text-3xl md:text-5xl font-bold font-heading mb-3">
+                My Wishlist
+              </h1>
+              <p className="text-white/80 max-w-2xl mx-auto text-sm">
+                {wishlist.length > 0
+                  ? `You have ${wishlist.length} item${wishlist.length > 1 ? "s" : ""} saved. Keep track of products you love.`
+                  : "Keep track of products you love."}
+              </p>
+            </motion.div>
           </div>
-        </section>
+        </div>
 
         {/* Wishlist Content */}
-        <section className="pb-12 lg:pb-16 pt-6 lg:pt-8 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-10 md:py-14">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             {wishlist.length === 0 ? (
-              <div className="bg-light-gray rounded-3xl p-16 text-center max-w-2xl mx-auto">
-                <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-                  <HeartOff className="w-8 h-8 text-muted" />
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-[2.5rem] p-12 md:p-20 text-center max-w-2xl mx-auto shadow-sm border border-gray-100">
+                <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                  <HeartOff className="w-10 h-10 text-emerald-300" />
                 </div>
-                <h2 className="text-2xl font-bold font-heading text-foreground mb-2">Your wishlist is empty</h2>
-                <p className="text-muted mb-8">
+                <h2 className="text-3xl font-bold font-heading text-slate-800 mb-3">Your wishlist is empty</h2>
+                <p className="text-slate-500 mb-8 font-medium">
                   Save items you love by clicking the heart icon on any product.
                 </p>
-                <Link href="/products" className="btn-primary inline-flex items-center gap-2 text-sm">
+                <Link href="/shop" className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#1E5AA8] to-[#43B97F] text-white rounded-full font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all">
                   Browse Products
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-              </div>
+              </motion.div>
             ) : (
-              <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                {wishlist.map((item) => (
-                  <div key={item._id} className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm card-hover group flex flex-col">
-                    <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-light-gray mb-4">
-                      <Image 
-                        src={item.imageUrl} 
-                        alt={item.name} 
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
-                      <button 
-                        onClick={() => toggleWishlist(item)}
-                        className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur text-danger rounded-xl flex items-center justify-center shadow-sm hover:bg-danger hover:text-white transition-colors"
-                        aria-label="Remove from wishlist"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                    
-                    <div className="flex-1 flex flex-col px-1">
-                      <h3 className="font-bold text-sm font-heading text-foreground line-clamp-2 mb-2 leading-snug">{item.name}</h3>
-                      <div className="text-primary font-bold mb-4 text-xl font-heading">₹{item.price.toFixed(2)}</div>
-                      
-                      <button 
-                        onClick={() => {
-                          addToCart(item);
-                          toggleWishlist(item); // Remove from wishlist after adding to cart
-                        }}
-                        className="mt-auto w-full bg-light-gray hover:bg-gradient-to-r hover:from-primary hover:to-primary-light text-primary hover:text-white py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2"
-                      >
-                        <ShoppingCart className="w-4 h-4" /> Move to Cart
-                      </button>
-                    </div>
-                  </div>
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {wishlist.map((item, index) => (
+                  <motion.div key={item._id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                    <ProductCard
+                      product={item}
+                      variant="wishlist"
+                      onWishlistToggle={() => toggleWishlist(item)}
+                      onAddToCart={() => {
+                        addToCart(item);
+                        toggleWishlist(item);
+                      }}
+                    />
+                  </motion.div>
                 ))}
               </div>
             )}

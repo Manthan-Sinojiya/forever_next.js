@@ -8,6 +8,7 @@ export interface IHeroSlide extends mongoose.Document {
   buttonLink: string;
   isActive: boolean;
   order: number;
+  showOverlay?: boolean;
 }
 
 const HeroSlideSchema = new mongoose.Schema<IHeroSlide>(
@@ -19,6 +20,7 @@ const HeroSlideSchema = new mongoose.Schema<IHeroSlide>(
     buttonLink: { type: String, default: "/products" },
     isActive: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
+    showOverlay: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

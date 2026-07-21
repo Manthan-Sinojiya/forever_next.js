@@ -5,6 +5,7 @@ import ScrollProgress from "@/components/layout/ScrollProgress";
 import SessionProvider from "@/components/providers/SessionProvider";
 import CartDrawer from "@/components/layout/CartDrawer";
 import ToastContainer from "@/components/layout/ToastContainer";
+import WhatsAppButton from "@/components/layout/WhatsAppButton";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -143,6 +144,7 @@ export default function RootLayout({
           {children}
           <CartDrawer />
           <ToastContainer />
+          <WhatsAppButton />
         </SessionProvider>
       </body>
     </html>

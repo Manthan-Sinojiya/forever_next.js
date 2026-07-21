@@ -38,7 +38,7 @@ const BLOG_POSTS: BlogPost[] = [
     id: "post-3",
     title: "Why Natural Vitamin C & Zinc Are Key for Immunity",
     category: "Nutrition",
-    imageUrl: "https://images.unsplash.com/photo-1616671276441-2f2c277b8bf4?auto=format&fit=crop&w=600&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=600&q=80",
     date: "July 10, 2026",
     readTime: "6 Min Read",
     excerpt: "Why are natural dietary sources superior to synthetic vitamins? Explore the biological absorption benefits of organic supplements.",
@@ -79,61 +79,62 @@ export default function Blog() {
         {/* Blog Post Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {BLOG_POSTS.map((post, idx) => (
-            <motion.article
-              key={post.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col group"
-            >
-              {/* Image Area */}
-              <div className="relative aspect-[16/10] bg-slate-100 overflow-hidden">
-                <Image
-                  src={post.imageUrl}
-                  alt={post.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <span className="absolute top-4 left-4 bg-emerald-50/90 backdrop-blur border border-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full">
-                  {post.category}
-                </span>
-              </div>
-
-              {/* Content Area */}
-              <div className="p-6 flex-1 flex flex-col">
-                {/* Meta details */}
-                <div className="flex items-center gap-4 text-slate-400 text-xs font-semibold mb-3">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {post.date}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    {post.readTime}
+            <Link key={post.id} href={`/blog/${post.id}`} className="block group">
+              <motion.article
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col h-full"
+              >
+                {/* Image Area */}
+                <div className="relative aspect-[16/10] bg-slate-100 overflow-hidden">
+                  <Image
+                    src={post.imageUrl}
+                    alt={post.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <span className="absolute top-4 left-4 bg-emerald-50/90 backdrop-blur border border-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full">
+                    {post.category}
                   </span>
                 </div>
 
-                {/* Title */}
-                <h3 className="text-lg font-bold text-slate-800 font-heading mb-3 line-clamp-2 group-hover:text-emerald-600 transition-colors leading-snug">
-                  {post.title}
-                </h3>
+                {/* Content Area */}
+                <div className="p-6 flex-1 flex flex-col">
+                  {/* Meta details */}
+                  <div className="flex items-center gap-4 text-slate-400 text-xs font-semibold mb-3">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {post.date}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {post.readTime}
+                    </span>
+                  </div>
 
-                {/* Excerpt */}
-                <p className="text-slate-500 text-sm leading-relaxed mb-5 line-clamp-3">
-                  {post.excerpt}
-                </p>
+                  {/* Title */}
+                  <h3 className="text-lg font-bold text-slate-800 font-heading mb-3 line-clamp-2 group-hover:text-emerald-600 transition-colors leading-snug">
+                    {post.title}
+                  </h3>
 
-                {/* Read Button */}
-                <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-600 group-hover:text-emerald-700 flex items-center gap-1.5 transition-colors">
-                    Read Full Article
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </span>
+                  {/* Excerpt */}
+                  <p className="text-slate-500 text-sm leading-relaxed mb-5 line-clamp-3">
+                    {post.excerpt}
+                  </p>
+
+                  {/* Read Button */}
+                  <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-600 group-hover:text-emerald-700 flex items-center gap-1.5 transition-colors">
+                      Read Full Article
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </motion.article>
+              </motion.article>
+            </Link>
           ))}
         </div>
       </div>

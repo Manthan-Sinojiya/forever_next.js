@@ -1,292 +1,205 @@
 import mongoose from "mongoose";
-import * as dotenv from "dotenv";
-import bcrypt from "bcryptjs";
+import axios from "axios";
+import dotenv from "dotenv";
+import path from "path";
 
-dotenv.config({ path: ".env.local" });
+// Load env variables
+dotenv.config({ path: path.join(__dirname, "../.env.local") });
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/forever-healthcare";
-
-// Schemas
-const ProductSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    description: { type: String, required: true },
-    price: { type: Number, required: true },
-    originalPrice: { type: Number },
-    category: { type: String, required: true },
-    imageUrl: { type: String, required: true },
-    inStock: { type: Boolean, default: true },
-    featured: { type: Boolean, default: false },
-    todayDeal: { type: Boolean, default: false },
-    rating: { type: Number, default: 5 },
-  },
-  { timestamps: true }
-);
-
-const HeroSlideSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  subtitle: { type: String, required: true },
+// Models (mocking the schema to avoid complex imports if needed, but since we are in the project we can just require them or redefine them)
+const productSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  category: { type: String },
+  price: { type: Number, required: true },
+  originalPrice: { type: Number },
   imageUrl: { type: String, required: true },
-  buttonText: { type: String, default: "Shop Now" },
-  buttonLink: { type: String, default: "/products" },
-  isActive: { type: Boolean, default: true },
-  order: { type: Number, default: 0 },
-}, { timestamps: true });
-
-const CouponSchema = new mongoose.Schema({
-  code: { type: String, required: true, unique: true, uppercase: true },
-  discount: { type: Number, required: true },
-  discountType: { type: String, enum: ["percentage", "fixed"], default: "percentage" },
-  minPurchase: { type: Number, default: 0 },
   description: { type: String, required: true },
-  expiryDate: { type: String, required: true },
-  isActive: { type: Boolean, default: true },
+  inStock: { type: Boolean, default: true },
+  featured: { type: Boolean, default: false },
+  todayDeal: { type: Boolean, default: false },
+  sizes: [{ name: String, price: Number, originalPrice: Number, stock: Number }],
 }, { timestamps: true });
 
-const Product = mongoose.models.Product || mongoose.model("Product", ProductSchema);
-const HeroSlide = mongoose.models.HeroSlide || mongoose.model("HeroSlide", HeroSlideSchema);
-const Coupon = mongoose.models.Coupon || mongoose.model("Coupon", CouponSchema);
+const categorySchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  slug: { type: String, required: true },
+  description: { type: String },
+  image: { type: String },
+  isActive: { type: Boolean, default: true },
+});
 
-const UserSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true, index: true },
-    password: { type: String },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
-    phone: { type: String },
-    city: { type: String },
-    state: { type: String },
-    wishlist: { type: [String], default: [] },
-  },
-  { timestamps: true }
-);
+const blogSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  slug: { type: String, required: true },
+  content: { type: String, required: true },
+  excerpt: { type: String },
+  coverImage: { type: String },
+  tags: [String],
+  isPublished: { type: Boolean, default: true },
+}, { timestamps: true });
 
-const User = mongoose.models.User || mongoose.model("User", UserSchema);
+const pageSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  slug: { type: String, required: true },
+  content: { type: String, required: true },
+  topBannerImage: String,
+  bottomBannerImage: String,
+  isActive: { type: Boolean, default: true },
+});
 
-const productsData = [
-  {
-    name: "Pure Ashwagandha Extract 500mg",
-    description: "Premium Ayurvedic supplement for stress relief, anxiety reduction, and enhanced daily vitality.",
-    price: 20,
-    originalPrice: 26,
-    category: "Food Supplements",
-    imageUrl: "/products/ashwagandha.png",
-    inStock: true,
-    featured: true,
-    todayDeal: true,
-    rating: 5,
-  },
-  {
-    name: "Vitamin C & Zinc Immunity Boosters",
-    description: "Daily chewable tablets to keep your immune system strong year-round against common colds.",
-    price: 15,
-    originalPrice: 21,
-    category: "Food Supplements",
-    imageUrl: "/products/vitamin-c-zinc.png",
-    inStock: true,
-    featured: true,
-    todayDeal: false,
-    rating: 4.8,
-  },
-  {
-    name: "Digital Blood Pressure Monitor",
-    description: "Highly accurate digital blood pressure and heart rate monitor for home use. Features memory storage.",
-    price: 46,
-    originalPrice: 60,
-    category: "Healthcare Equipments",
-    imageUrl: "/products/bp-monitor.png",
-    inStock: true,
-    featured: true,
-    todayDeal: false,
-    rating: 4.8,
-  },
-  {
-    name: "Fingertip Pulse Oximeter",
-    description: "Instant SpO2 and pulse rate readings. Essential for home respiratory monitoring.",
-    price: 19,
-    originalPrice: 25,
-    category: "Healthcare Equipments",
-    imageUrl: "/products/pulse-oximeter.png",
-    inStock: true,
-    featured: true,
-    todayDeal: true,
-    rating: 4.9,
-  },
-  {
-    name: "Men's Vitality Booster Capsules",
-    description: "Natural wellness supplement specifically formulated for men's daily energy and health.",
-    price: 30,
-    originalPrice: 44,
-    category: "Men Health",
-    imageUrl: "/products/vitality-capsules.png",
-    inStock: true,
-    featured: true,
-    todayDeal: false,
-    rating: 4.5,
-  },
-  {
-    name: "Digital Blood Glucose Meter Kit",
-    description: "A comprehensive glucose testing kit with painless lancing device and 25 test strips.",
-    price: 35,
-    originalPrice: 55,
-    category: "Healthcare Equipments",
-    imageUrl: "/products/glucose-meter.png",
-    inStock: true,
-    featured: true,
-    todayDeal: false,
-    rating: 4.7,
-  },
-  {
-    name: "Orthopedic Knee Support Brace",
-    description: "Provides exceptional stability, compression, and comfort for injured or weak knees.",
-    price: 22,
-    originalPrice: 32,
-    category: "Orthopedic Care",
-    imageUrl: "/products/knee-support.png",
-    inStock: true,
-    featured: true,
-    todayDeal: false,
-    rating: 4.6,
-  },
-  {
-    name: "Infrared Forehead Thermometer",
-    description: "Non-contact medical-grade thermometer for instant, accurate temperature readings.",
-    price: 28,
-    originalPrice: 40,
-    category: "Healthcare Equipments",
-    imageUrl: "/products/thermometer.png",
-    inStock: true,
-    featured: false,
-    todayDeal: false,
-    rating: 4.9,
-  },
-  {
-    name: "Premium First Aid Kit",
-    description: "Fully stocked first aid kit with 150 essential medical-grade supplies for home and travel.",
-    price: 18,
-    originalPrice: 25,
-    category: "First Aid",
-    imageUrl: "/products/first-aid.png",
-    inStock: true,
-    featured: false,
-    todayDeal: false,
-    rating: 4.8,
-  }
-];
+const settingSchema = new mongoose.Schema({
+  key: { type: String, required: true, unique: true },
+  value: { type: mongoose.Schema.Types.Mixed },
+});
 
-const heroSlidesData = [
-  {
-    title: "100% Organic Ayurvedic Health Solutions",
-    subtitle: "Authentic Herbs & Natural Supplements Direct from Himalayan Valleys",
-    imageUrl: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=80",
-    buttonText: "Explore Ayurveda",
-    buttonLink: "/products",
-    order: 1,
-  },
-  {
-    title: "Premium Home Healthcare Equipment",
-    subtitle: "Up to 40% Off on Certified BP Monitors, Oximeters & Nebulizers",
-    imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=1200&q=80",
-    buttonText: "Shop Equipment",
-    buttonLink: "/products",
-    order: 2,
-  },
-  {
-    title: "Vitals & Nutritional Wellness",
-    subtitle: "Daily Multivitamins, Fish Oils & Stamina Boosters",
-    imageUrl: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80",
-    buttonText: "Get Nutrition",
-    buttonLink: "/products",
-    order: 3,
-  }
-];
+const Product = mongoose.models.Product || mongoose.model("Product", productSchema);
+const Category = mongoose.models.Category || mongoose.model("Category", categorySchema);
+const Blog = mongoose.models.Blog || mongoose.model("Blog", blogSchema);
+const Page = mongoose.models.Page || mongoose.model("Page", pageSchema);
+const Setting = mongoose.models.Setting || mongoose.model("Setting", settingSchema);
 
-const couponsData = [
-  {
-    code: "AYUR10",
-    discount: 10,
-    discountType: "percentage",
-    minPurchase: 499,
-    description: "Get 10% OFF on all Ayurvedic Supplements! Minimum purchase ₹499.",
-    expiryDate: "2026-12-31",
-    isActive: true,
-  },
-  {
-    code: "HEALTH50",
-    discount: 50,
-    discountType: "fixed",
-    minPurchase: 299,
-    description: "Save ₹50 flat on your first order. Minimum purchase ₹299.",
-    expiryDate: "2026-12-31",
-    isActive: true,
-  },
-  {
-    code: "FREESHIP",
-    discount: 100,
-    discountType: "percentage",
-    minPurchase: 999,
-    description: "Get Free Shipping + 10% Extra Discount on orders above ₹999.",
-    expiryDate: "2026-12-31",
-    isActive: true,
-  }
-];
-
-async function seedDB() {
+async function seed() {
   try {
-    console.log("Connecting to MongoDB...");
+    const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/forever-healthcare";
     await mongoose.connect(MONGODB_URI);
-    console.log("Connected successfully.");
+    console.log("Connected to MongoDB.");
 
-    console.log("Clearing collections...");
+    // Clear existing
+    console.log("Clearing existing data...");
     await Product.deleteMany({});
-    await HeroSlide.deleteMany({});
-    await Coupon.deleteMany({});
-    await User.deleteMany({});
+    await Category.deleteMany({});
+    await Blog.deleteMany({});
+    await Page.deleteMany({});
+    await Setting.deleteMany({});
 
-    console.log("Inserting Products...");
-    await Product.insertMany(productsData);
+    // 1. Categories
+    const categories = [
+      { name: "Supplements", slug: "supplements", isActive: true },
+      { name: "Liver Care", slug: "liver-care", isActive: true },
+      { name: "Hair Care", slug: "hair-care", isActive: true },
+      { name: "Weight Management", slug: "weight-management", isActive: true },
+      { name: "Skin Care", slug: "skin-care", isActive: true },
+    ];
+    await Category.insertMany(categories);
+    console.log("Inserted Categories.");
 
-    console.log("Inserting Hero Slides...");
-    await HeroSlide.insertMany(heroSlidesData);
+    // 2. Products from Fytika
+    console.log("Fetching products from Fytika...");
+    const { data } = await axios.get("https://fytika.com/products.json?limit=25");
+    const shopifyProducts = data.products;
 
-    console.log("Inserting Coupons...");
-    await Coupon.insertMany(couponsData);
+    const formattedProducts = shopifyProducts.map((p: any, index: number) => {
+      const price = parseFloat(p.variants[0]?.price || "499");
+      const originalPrice = parseFloat(p.variants[0]?.compare_at_price || String(price * 1.5));
+      const imageUrl = p.images && p.images.length > 0 ? p.images[0].src : "https://via.placeholder.com/600";
+      
+      // Assign random category
+      const randomCat = categories[index % categories.length].name;
 
-    console.log("Inserting Default User Accounts...");
-    const salt = await bcrypt.genSalt(10);
-    const hashedAdminPassword = await bcrypt.hash("admin123", salt);
-    const hashedUserPassword = await bcrypt.hash("user123", salt);
+      return {
+        name: p.title.replace(/🎁\s*/g, ""), // clean emojis
+        category: randomCat,
+        price,
+        originalPrice,
+        imageUrl,
+        description: p.body_html || "<p>Premium Healthcare Supplement.</p>",
+        inStock: true,
+        featured: index < 4,
+        todayDeal: index === 5 || index === 6,
+      };
+    });
 
-    await User.create([
+    await Product.insertMany(formattedProducts);
+    console.log(`Inserted ${formattedProducts.length} Products from Fytika.`);
+
+    // 3. Blogs
+    const blogs = [
       {
-        name: "Administrator",
-        email: "admin@foreverhealthcare.in",
-        password: hashedAdminPassword,
-        role: "admin",
-        phone: "+91 99999 99999",
-        city: "Mumbai",
-        state: "Maharashtra",
-        wishlist: [],
+        title: "The Ultimate Guide to Liver Detox",
+        slug: "ultimate-guide-liver-detox",
+        excerpt: "Learn how to naturally detoxify your liver using powerful ayurvedic herbs.",
+        content: "<h2>Why Liver Health Matters</h2><p>Your liver is one of the most vital organs in the body...</p>",
+        coverImage: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=800",
+        tags: ["Detox", "Liver", "Ayurveda"],
       },
       {
-        name: "John Doe",
-        email: "user@foreverhealthcare.in",
-        password: hashedUserPassword,
-        role: "user",
-        phone: "+91 98765 43210",
-        city: "Mumbai",
-        state: "Maharashtra",
-        wishlist: [],
+        title: "5 Tips for Glowing Skin",
+        slug: "5-tips-glowing-skin",
+        excerpt: "Achieve radiant skin with these simple natural remedies.",
+        content: "<h2>Drink More Water</h2><p>Hydration is the key to glowing skin...</p>",
+        coverImage: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&q=80&w=800",
+        tags: ["Beauty", "Skin Care"],
       }
-    ]);
-    
-    console.log("Database seeded successfully with Users, Products, Banners, and Coupons!");
-  } catch (error) {
-    console.error("Error seeding database:", error);
-  } finally {
-    mongoose.connection.close();
+    ];
+    await Blog.insertMany(blogs);
+    console.log("Inserted Blogs.");
+
+    // 4. Pages
+    const pages = [
+      {
+        title: "About Us",
+        slug: "about",
+        content: "<h2>Who We Are</h2><p>Forever Healthcare is dedicated to providing premium quality health supplements.</p>",
+      },
+      {
+        title: "Refund Policy",
+        slug: "refund-policy",
+        content: "<h2>Returns and Refunds</h2><p>We offer a 30-day money-back guarantee on all our products.</p>",
+      },
+      {
+        title: "Privacy Policy",
+        slug: "privacy-policy",
+        content: "<h2>Your Privacy Matters</h2><p>We do not share your personal data with third parties.</p>",
+      }
+    ];
+    await Page.insertMany(pages);
+    console.log("Inserted Pages.");
+
+    // 5. Navigation & Homepage Settings
+    const navSettings = [
+      {
+        key: "navigation",
+        value: {
+          categoryMenuLabel: "Shop by Category",
+          dropdownSubItems: { medicine: true, equipment: true },
+          headerItems: [
+            { id: "1", title: "Home", targetUrl: "/" },
+            { id: "2", title: "Products", targetUrl: "/products" },
+            { id: "3", title: "Blogs", targetUrl: "/blog" },
+            { id: "4", title: "About", targetUrl: "/pages/about" }
+          ],
+          showMegamenu: true,
+          megamenuColumns: [
+            { id: "c1", title: "Supplements", links: "Liver Care, Hair Care" },
+            { id: "c2", title: "Personal Care", links: "Skin Care, Grooming" }
+          ],
+          megamenuBanners: [
+            { id: "b1", heading: "New Arrivals", link: "/products", imageUrl: "" }
+          ],
+          footerColumns: [
+            { id: "f1", title: "Quick Links", links: "Home|/,Products|/products,Blogs|/blog" },
+            { id: "f2", title: "Policies", links: "Privacy|/pages/privacy-policy,Refunds|/pages/refund-policy" }
+          ]
+        }
+      },
+      {
+        key: "homepage_standards_title",
+        value: "Why Choose Forever Healthcare"
+      },
+      {
+        key: "homepage_standards_content",
+        value: "<ul><li>100% Natural Ingredients</li><li>Lab Tested for Purity</li><li>GMP Certified Manufacturing</li></ul>"
+      }
+    ];
+    await Setting.insertMany(navSettings);
+    console.log("Inserted Navigation & Homepage CMS Settings.");
+
+    console.log("Seed successful!");
     process.exit(0);
+  } catch (error) {
+    console.error("Seed error:", error);
+    process.exit(1);
   }
 }
 
-seedDB();
+seed();

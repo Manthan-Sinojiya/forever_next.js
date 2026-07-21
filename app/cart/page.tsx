@@ -9,6 +9,7 @@ import { useCartStore } from "@/lib/store";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Truck, CreditCard, ChevronLeft, QrCode, Lock, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 function CartPageContent() {
   const { data: session } = useSession();
@@ -44,6 +45,7 @@ function CartPageContent() {
   const removeFromCart = useCartStore((state) => state.removeFromCart);
   const getTotalPrice = useCartStore((state) => state.getTotalPrice);
   const clearCart = useCartStore((state) => state.clearCart);
+  const addToast = useCartStore((state) => state.addToast);
   const router = useRouter();
   const searchParams = useSearchParams();
   const checkoutParam = searchParams.get("checkout") === "true";
@@ -74,7 +76,7 @@ function CartPageContent() {
     if (checkoutParam) {
       const savedEmail = localStorage.getItem("userEmail") || session?.user?.email;
       if (!savedEmail) {
-        alert("Please login first to proceed to checkout!");
+        addToast("Please login first to proceed to checkout!", "error");
         router.push("/login?callbackUrl=/cart?checkout=true");
       } else {
         setIsCheckingOut(true);
@@ -87,7 +89,7 @@ function CartPageContent() {
   const handleProceedToCheckout = () => {
     const savedEmail = localStorage.getItem("userEmail") || session?.user?.email;
     if (!savedEmail) {
-      alert("Please login first to proceed to checkout!");
+      addToast("Please login first to proceed to checkout!", "error");
       router.push("/login?callbackUrl=/cart?checkout=true");
       return;
     }
@@ -177,14 +179,14 @@ function CartPageContent() {
       if (data.success) {
         clearCart();
         setShowPaymentModal(false);
-        alert("Order placed successfully! Redirecting to My Orders...");
+        addToast("Order placed successfully! Redirecting to My Orders...", "success");
         router.push("/profile?tab=Orders");
       } else {
-        alert("Order placement failed: " + data.error);
+        addToast("Order placement failed: " + data.error, "error");
       }
     } catch (error) {
       console.error("Order submit error:", error);
-      alert("Error submitting order. Please try again.");
+      addToast("Error submitting order. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -194,7 +196,7 @@ function CartPageContent() {
     if (e) e.preventDefault();
     
     if (!fullName || !phone || !addressLine || !city || !state || !zipCode) {
-      alert("Please fill in all shipping details");
+      addToast("Please fill in all shipping details", "error");
       return;
     }
 
@@ -256,11 +258,11 @@ function CartPageContent() {
                   },
                 });
               } else {
-                alert("Payment signature verification failed. Please try again.");
+                addToast("Payment signature verification failed. Please try again.", "error");
               }
             } catch (verifyErr) {
               console.error("Payment verification failure:", verifyErr);
-              alert("Failed to verify transaction. Please contact support.");
+              addToast("Failed to verify transaction. Please contact support.", "error");
             } finally {
               setLoading(false);
             }
@@ -280,7 +282,7 @@ function CartPageContent() {
       }
     } catch (err: any) {
       console.error("Online checkout initiation failed:", err);
-      alert("Failed to initiate online checkout. Falling back to checkout simulator.");
+      addToast("Failed to initiate online checkout. Falling back to checkout simulator.", "error");
       setShowPaymentModal(true);
     } finally {
       setLoading(false);
@@ -311,21 +313,21 @@ function CartPageContent() {
         <section className="pb-12 lg:pb-16 pt-6 lg:pt-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {cart.length === 0 ? (
-              <div className="bg-white rounded-3xl p-16 text-center max-w-2xl mx-auto border border-slate-100 shadow-sm">
-                <div className="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                  <ShoppingBag className="w-8 h-8 text-emerald-600" />
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-[2.5rem] p-12 md:p-20 text-center max-w-2xl mx-auto shadow-sm border border-gray-100">
+                <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                  <ShoppingBag className="w-10 h-10 text-emerald-500" />
                 </div>
-                <h2 className="text-2xl font-bold font-heading text-foreground mb-2">
+                <h2 className="text-3xl font-bold font-heading text-slate-800 mb-3">
                   Your cart is empty
                 </h2>
-                <p className="text-muted mb-8">
+                <p className="text-slate-500 mb-8 font-medium">
                   Looks like you haven&apos;t added any products to your cart yet.
                 </p>
-                <Link href="/products" className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold text-sm inline-flex items-center gap-2 transition-all">
+                <Link href="/shop" className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#1E5AA8] to-[#43B97F] text-white rounded-full font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all">
                   Browse Products
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-              </div>
+              </motion.div>
             ) : (
               <div className="grid lg:grid-cols-3 gap-8">
                 
@@ -603,7 +605,7 @@ function CartPageContent() {
                     {!isCheckingOut ? (
                       <button
                         onClick={handleProceedToCheckout}
-                        className="w-full bg-slate-900 hover:bg-emerald-600 hover:shadow-emerald-600/10 text-white py-3.5 rounded-xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2 hover:shadow-lg"
+                        className="w-full bg-gradient-to-r from-[#1E5AA8] to-[#43B97F] hover:opacity-90 text-white py-3.5 rounded-xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg"
                       >
                         Proceed to Checkout
                         <ArrowRight className="w-4 h-4" />

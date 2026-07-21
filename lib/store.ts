@@ -7,7 +7,11 @@ export interface CartItem {
   price: number;
   imageUrl: string;
   quantity: number;
+  originalPrice?: number;
+  category?: string;
 }
+
+export type ProductInput = Omit<CartItem, 'quantity'> & { quantity?: number };
 
 export interface Toast {
   id: string;
@@ -23,13 +27,13 @@ interface CartState {
   toasts: Toast[];
   addToast: (message: string, type?: 'success' | 'info' | 'error') => void;
   removeToast: (id: string) => void;
-  addToCart: (product: any) => void;
+  addToCart: (product: ProductInput) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
-  toggleWishlist: (product: any) => void;
+  toggleWishlist: (product: ProductInput) => void;
   isInWishlist: (productId: string) => boolean;
   setWishlist: (items: CartItem[]) => void;
 }
@@ -58,7 +62,7 @@ export const useCartStore = create<CartState>()(
           ? state.cart.map(item =>
               item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
             )
-          : [...state.cart, { ...product, quantity: 1 }];
+          : [...state.cart, { ...product, quantity: product.quantity ?? 1 }];
 
         setTimeout(() => {
           get().addToast(`"${product.name}" added to cart!`, 'success');

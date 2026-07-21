@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, Phone, MapPin, Globe, Share2, Users, Heart, ArrowUpRight, Leaf } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Mail, Phone, MapPin, Globe, Share2, Users, Heart, ArrowUpRight } from "lucide-react";
 
 const quickLinks = [
   { href: "/about", label: "About Us" },
@@ -9,16 +12,9 @@ const quickLinks = [
   { href: "/contact", label: "Contact Us" },
 ];
 
-const categories = [
-  { href: "/products?category=Food%20Supplements", label: "Food Supplements" },
-  { href: "/products?category=Healthcare%20Equipments", label: "Healthcare Equipment" },
-  { href: "/products?category=Men%20Health", label: "Men Health" },
-  { href: "/products?category=Personal%20Care", label: "Personal Care" },
-];
-
 const policies = [
   { href: "/privacy-policy", label: "Privacy Policy" },
-  { href: "/terms", label: "Terms & Conditions" },
+  { href: "/terms-conditions", label: "Terms & Conditions" },
   { href: "/refund-policy", label: "Refund Policy" },
   { href: "/faq", label: "FAQ" },
 ];
@@ -31,6 +27,25 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const [categories, setCategories] = useState<{ href: string; label: string }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          const activeCategories = data.data
+            .filter((c: any) => c.isActive)
+            .map((c: any) => ({
+              href: `/categories/${c.slug}`,
+              label: c.name,
+            }));
+          setCategories(activeCategories.slice(0, 5)); // Show top 5
+        }
+      })
+      .catch((err) => console.error("Error loading categories in footer:", err));
+  }, []);
+
   return (
     <footer className="bg-[#0A1628] text-white relative overflow-hidden">
       {/* Decorative top border */}

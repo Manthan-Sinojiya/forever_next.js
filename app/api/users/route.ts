@@ -17,7 +17,7 @@ export async function GET() {
 // POST register a new user
 export async function POST(request: Request) {
   try {
-    const { name, email, password, phone, city, state, role } = await request.json();
+    const { name, email, password, phone, address, city, state, role } = await request.json();
     
     if (!name || !email || !password) {
       return NextResponse.json({ success: false, error: "Please provide name, email, and password" }, { status: 400 });
@@ -40,6 +40,7 @@ export async function POST(request: Request) {
       email,
       password: hashedPassword,
       phone,
+      address,
       city,
       state,
       role: role || "user", // support setting admin role for local seed/setup
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
       email: newUser.email,
       role: newUser.role,
       phone: newUser.phone,
+      address: newUser.address,
       city: newUser.city,
       state: newUser.state,
       createdAt: newUser.createdAt,

@@ -1,23 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, Info, AlertCircle, X } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 
+// Safe client-only mount check without useEffect+setState
+function useIsMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
+
 export default function ToastContainer() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsMounted();
   const toasts = useCartStore((state) => state.toasts);
   const removeToast = useCartStore((state) => state.removeToast);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!mounted) return null;
 
   return (
-    <div className="fixed bottom-6 left-6 z-55 flex flex-col gap-3 max-w-sm w-full no-print pointer-events-none">
+    <div className="fixed bottom-6 left-6 z-[55] flex flex-col gap-3 max-w-sm w-full no-print pointer-events-none">
       <AnimatePresence>
         {toasts.map((toast) => {
           let bgClass = "bg-white border-slate-100 text-slate-800 shadow-lg";
@@ -47,7 +52,7 @@ export default function ToastContainer() {
               <p className="text-xs font-bold leading-relaxed flex-1">{toast.message}</p>
               <button
                 onClick={() => removeToast(toast.id)}
-                className="text-slate-400 hover:text-slate-650 hover:bg-slate-200/50 p-1 rounded-lg transition-all cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 p-1 rounded-lg transition-all cursor-pointer"
                 aria-label="Dismiss notification"
               >
                 <X className="w-3.5 h-3.5" />

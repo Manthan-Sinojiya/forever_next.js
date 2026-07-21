@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/mongodb";
-import Product from "@/models/Product";
+import { deleteProduct, updateProduct } from "@/services/productService";
 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await dbConnect();
     const { id } = await params;
-    await Product.findByIdAndDelete(id);
+    await deleteProduct(id);
     return NextResponse.json({ success: true, message: "Product deleted" }, { status: 200 });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Failed to delete product" }, { status: 400 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message || "Failed to delete product" }, { status: 400 });
   }
 }
 
@@ -21,12 +19,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await dbConnect();
     const { id } = await params;
     const body = await request.json();
-    const updatedProduct = await Product.findByIdAndUpdate(id, body, { new: true });
+    const updatedProduct = await updateProduct(id, body);
     return NextResponse.json({ success: true, data: updatedProduct }, { status: 200 });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Failed to update product" }, { status: 400 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message || "Failed to update product" }, { status: 400 });
   }
 }

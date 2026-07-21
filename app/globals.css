@@ -338,3 +338,23 @@ h1, h2, h3, h4, h5, h6 {
   display: none;
 }
 
+/* === Rich Text & Editor List Fixes === */
+.jodit-wysiwyg ul, .prose ul {
+  list-style-type: disc;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.jodit-wysiwyg ol, .prose ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.jodit-wysiwyg li, .prose li {
+  margin-bottom: 0.25rem !important;
+  display: list-item !important;
+}
+

@@ -32,7 +32,6 @@ const reasons = [
 ];
 
 const quickActions = [
-  { emoji: "🏪", title: "Sell on Forever", sub: "Become a seller today", href: "/contact" },
   { emoji: "📦", title: "Track Your Order", sub: "Real-time order status", href: "/dashboard" },
   { emoji: "📋", title: "Dashboard", sub: "Upload & order online", href: "/dashboard" },
 ];

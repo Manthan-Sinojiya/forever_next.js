@@ -1,6 +1,6 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Stethoscope, Clock, ShieldCheck, HeartPulse, Pill, PhoneCall, ArrowRight } from "lucide-react";
+import { Stethoscope, ShieldCheck, HeartPulse, Pill, PhoneCall, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Metadata } from "next";
 

@@ -2,20 +2,19 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import {
   Menu,
   X,
   ShoppingCart,
   User,
   Search,
-  Phone,
   Heart,
   Sparkles,
-  Leaf,
   LayoutDashboard,
   LogOut,
   Package,
+  Leaf,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/lib/store";
@@ -29,27 +28,60 @@ const navLinks = [
 ];
 
 export default function Navbar() {
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<{ _id: string; name: string; category: string; price: number; imageUrl: string }[]>([]);
+  const [categories, setCategories] = useState<{ name: string; slug: string; image?: string }[]>([]);
+  const [showMegaMenu, setShowMegaMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  const [mounted, setMounted] = useState(false);
   const cartItemsCount = useCartStore((state) => state.getTotalItems());
   const wishlistCount = useCartStore((state) => state.wishlist?.length || 0);
 
   const [role, setRole] = useState("user");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [announcement, setAnnouncement] = useState("🎉 Free shipping on all orders above ₹499! Use code: EXTRA10 for 10% off");
+  const [announcementBg, setAnnouncementBg] = useState("#0a8c6e");
+  const [announcementStyle, setAnnouncementStyle] = useState("static");
 
   useEffect(() => {
-    setMounted(true);
     const savedRole = localStorage.getItem("userRole");
     const savedEmail = localStorage.getItem("userEmail");
     setRole(savedRole || "user");
     setIsLoggedIn(!!savedEmail);
+
+    type Setting = { key: string; value: string };
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          const textSetting = data.data.find((s: Setting) => s.key === "announcement");
+          const bgSetting = data.data.find((s: Setting) => s.key === "announcement_bg");
+          const styleSetting = data.data.find((s: Setting) => s.key === "announcement_style");
+
+          if (textSetting?.value) setAnnouncement(textSetting.value);
+          if (bgSetting?.value) setAnnouncementBg(bgSetting.value);
+          if (styleSetting?.value) setAnnouncementStyle(styleSetting.value);
+        }
+      })
+      .catch((err) => console.error("Error loading announcement settings:", err));
+
+    fetch("/api/admin/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setCategories(data.data.filter((c: any) => c.isActive));
+        }
+      })
+      .catch((err) => console.error("Error loading categories:", err));
 
     if (savedEmail) {
       fetch(`/api/wishlist?email=${encodeURIComponent(savedEmail)}`)
@@ -142,38 +174,35 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Top Bar */}
-      <div className="bg-gradient-to-r from-[#1b6b47] to-[#124d32] text-white text-xs py-2 hidden font-bold md:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <span className="flex items-center gap-1.5">
-              <Phone className="w-3 h-3" />
-              +91 98765 43210
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-amber-300" />
-              Free Shipping on orders above ₹999
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            {mounted && isLoggedIn ? (
-              <button
-                onClick={handleLogout}
-                className="hover:text-emerald-300 transition-colors text-xs font-semibold bg-transparent border-none cursor-pointer p-0"
-              >
-                Logout
-              </button>
-            ) : (
-              <Link href="/login" className="hover:text-emerald-300 transition-colors">
-                Login / Register
-              </Link>
-            )}
-            <span className="text-white/30">|</span>
-            <Link href="/profile" className="hover:text-emerald-300 transition-colors">
-              Track Order
-            </Link>
-          </div>
+      {/* Announcement Bar */}
+      <div
+        className="text-white text-[12.5px] py-2.5 px-4 text-center font-bold tracking-wider relative z-50 overflow-hidden"
+        style={{ backgroundColor: announcementBg }}
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-center h-5">
+          {announcementStyle === "scrolling" ? (
+            <div className="w-full overflow-hidden whitespace-nowrap relative">
+              <div className="animate-marquee-nav-active whitespace-nowrap">
+                <span className="px-8">{announcement}</span>
+                <span className="px-8">{announcement}</span>
+                <span className="px-8">{announcement}</span>
+              </div>
+            </div>
+          ) : (
+            <span className="truncate">{announcement}</span>
+          )}
         </div>
+
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes marqueeNav {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-33.33%, 0, 0); }
+          }
+          .animate-marquee-nav-active {
+            display: inline-block;
+            animation: marqueeNav 25s linear infinite;
+          }
+        `}} />
       </div>
 
       {/* Main Navbar */}
@@ -203,24 +232,68 @@ export default function Navbar() {
             {/* Desktop Menu */}
             <div className="hidden lg:flex items-center gap-1">
               {navLinks.map((link) => (
-                <div key={link.href} className="relative">
+                <div
+                  key={link.href}
+                  className="relative group"
+                  onMouseEnter={() => link.label === "Products" && setShowMegaMenu(true)}
+                  onMouseLeave={() => link.label === "Products" && setShowMegaMenu(false)}
+                >
                   <Link
                     href={link.href}
-                    className={`relative px-4 py-2 text-sm font-semibold transition-all duration-200 rounded-lg flex items-center gap-1 ${
+                    className={`relative px-4 py-6 text-sm font-semibold transition-all duration-200 flex items-center gap-1 ${
                       isActive(link.href)
-                        ? "text-emerald-600 bg-emerald-50/40"
-                        : "text-foreground/80 hover:text-emerald-600 hover:bg-emerald-50/20"
+                        ? "text-emerald-600"
+                        : "text-foreground/80 hover:text-emerald-600"
                     }`}
                   >
                     {link.label}
                     {isActive(link.href) && (
                       <motion.div
                         layoutId="activeNav"
-                        className="absolute bottom-0 left-4 right-4 h-0.5 bg-emerald-600 rounded-full"
+                        className="absolute bottom-4 left-4 right-4 h-0.5 bg-emerald-600 rounded-full"
                         transition={{ type: "spring", stiffness: 380, damping: 30 }}
                       />
                     )}
                   </Link>
+
+                  {/* Mega Menu */}
+                  {link.label === "Products" && (
+                    <div className={`absolute top-full left-1/2 -translate-x-1/2 w-[800px] bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-slate-100 transition-all duration-300 origin-top overflow-hidden z-50 ${showMegaMenu ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'}`}>
+                      <div className="p-6">
+                        <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-50">
+                          <h3 className="text-sm font-black text-slate-800 tracking-wide uppercase">Categories</h3>
+                          <Link href="/shop" className="text-xs font-bold text-emerald-600 hover:text-emerald-700">View All &rarr;</Link>
+                        </div>
+                        <div className="grid grid-cols-4 gap-4">
+                          {categories.map((cat) => (
+                            <Link
+                              key={cat.slug}
+                              href={`/categories/${cat.slug}`}
+                              className="group/item p-3 rounded-xl hover:bg-slate-50 transition-colors flex flex-col items-center text-center gap-2"
+                              onClick={() => setShowMegaMenu(false)}
+                            >
+                              <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center overflow-hidden border border-emerald-100/50 group-hover/item:border-emerald-200 group-hover/item:shadow-sm transition-all">
+                                {cat.image ? (
+                                  <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Leaf className="w-5 h-5 text-emerald-500" />
+                                )}
+                              </div>
+                              <span className="text-xs font-bold text-slate-700 group-hover/item:text-emerald-650">{cat.name}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="bg-emerald-50/50 px-6 py-3 border-t border-emerald-100/30 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
+                          <Sparkles className="w-4 h-4 text-emerald-600" /> Premium Ayurvedic Formulations
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
+                          <Heart className="w-4 h-4 text-emerald-600" /> 100% Safe & Natural
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -334,49 +407,59 @@ export default function Navbar() {
                 )}
               </Link>
 
-              {/* Profile with Dropdown */}
-              <div className="relative group">
-                <Link
-                  href="/profile"
-                  className="w-10 h-10 flex items-center justify-center rounded-xl text-foreground/60 hover:text-emerald-600 hover:bg-emerald-50 transition-all relative"
-                  aria-label="User account"
-                >
-                  <User className="w-[18px] h-[18px]" />
-                </Link>
-                {/* Dropdown menu */}
-                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              {mounted && isLoggedIn ? (
+                <div className="relative group">
                   <Link
-                    href="/profile?tab=Profile"
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                    href="/profile"
+                    className="w-10 h-10 flex items-center justify-center rounded-xl text-foreground/60 hover:text-emerald-600 hover:bg-emerald-50 transition-all relative"
+                    aria-label="User account"
                   >
-                    <User className="w-4 h-4 text-gray-400 group-hover:text-emerald-600" />
-                    My Profile
+                    <User className="w-[18px] h-[18px]" />
                   </Link>
-                  <Link
-                    href="/profile?tab=Orders"
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
-                  >
-                    <Package className="w-4 h-4 text-gray-400 group-hover:text-emerald-600" />
-                    My Orders
-                  </Link>
-                  {mounted && role === "admin" && (
+                  {/* Dropdown menu */}
+                  <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                     <Link
-                      href="/admin"
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-emerald-650 hover:bg-emerald-50 hover:text-emerald-600 transition-colors border-t border-gray-100"
+                      href="/profile?tab=Profile"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
                     >
-                      <LayoutDashboard className="w-4 h-4" />
-                      Admin Panel
+                      <User className="w-4 h-4 text-gray-400 group-hover:text-emerald-600" />
+                      My Profile
                     </Link>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-50 hover:text-red-650 transition-colors border-t border-gray-100 text-left cursor-pointer bg-transparent border-none"
-                  >
-                    <LogOut className="w-4 h-4 text-red-400" />
-                    Logout
-                  </button>
+                    <Link
+                      href="/profile?tab=Orders"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                    >
+                      <Package className="w-4 h-4 text-gray-400 group-hover:text-emerald-600" />
+                      My Orders
+                    </Link>
+                    {mounted && role === "admin" && (
+                      <Link
+                        href="/admin"
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-emerald-650 hover:bg-emerald-50 hover:text-emerald-600 transition-colors border-t border-gray-100"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        Admin Panel
+                      </Link>
+                    )}
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-50 hover:text-red-650 transition-colors border-t border-gray-100 text-left cursor-pointer bg-transparent border-none"
+                    >
+                      <LogOut className="w-4 h-4 text-red-400" />
+                      Logout
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                mounted && (
+                  <Link
+                    href="/login"
+                    className="px-4 py-1.5 border border-[#0D623F]/35 text-[#0D623F] hover:bg-[#EAF6F0] rounded-full font-bold text-xs transition-all active:scale-95 ml-1 select-none"
+                  >
+                    Login
+                  </Link>
+                )
+              )}
 
               {/* Ayurveda Logo */}
               <Link href="https://ayurvedabits.com/" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 flex items-center border-l border-gray-100 pl-3.5 ml-1.5 hover:opacity-85 transition-opacity">
@@ -517,13 +600,24 @@ export default function Navbar() {
                       </span>
                     )}
                   </Link>
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-light-gray rounded-xl"
-                  >
-                    <User className="w-4 h-4" />
-                    My Profile
-                  </Link>
+                  {mounted && isLoggedIn && (
+                    <Link
+                      href="/profile"
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground/80 hover:bg-light-gray rounded-xl"
+                    >
+                      <User className="w-4 h-4" />
+                      My Profile
+                    </Link>
+                  )}
+                  {mounted && !isLoggedIn && (
+                    <Link
+                      href="/login"
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-emerald-650 bg-emerald-50/40 hover:bg-emerald-50 rounded-xl"
+                    >
+                      <User className="w-4 h-4" />
+                      Login / Register
+                    </Link>
+                  )}
                   {mounted && role === "admin" && (
                     <Link
                       href="/admin"

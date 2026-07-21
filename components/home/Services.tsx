@@ -3,10 +3,8 @@
 import { motion } from "framer-motion";
 import {
   Pill,
-  Activity,
   HeartPulse,
   Stethoscope,
-  Microscope,
   PhoneCall,
   ArrowRight,
 } from "lucide-react";

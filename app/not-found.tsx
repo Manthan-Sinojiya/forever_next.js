@@ -1,43 +1,67 @@
 "use client";
 
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Home, Search, ShoppingBag, ArrowLeft } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import Link from "next/link";
-import { Home, ArrowLeft } from "lucide-react";
+
+const QUICK_LINKS = [
+  { href: "/shop", icon: ShoppingBag, label: "Browse Products" },
+  { href: "/categories", icon: Search, label: "All Categories" },
+  { href: "/offers", icon: Search, label: "Today's Offers" },
+  { href: "/contact", icon: Home, label: "Contact Us" },
+];
 
 export default function NotFound() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 w-full bg-gradient-to-br from-[#EAF8F2] via-[#EEF4FB] to-[#F8FAFC] flex items-center justify-center min-h-[80vh] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-3xl -mr-48 -mt-48" />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-medical/5 rounded-full blur-3xl -ml-32 -mb-32" />
-        <div className="absolute inset-0 bg-[radial-gradient(#1E5AA8_0.5px,transparent_0.5px)] [background-size:24px_24px] opacity-[0.015]" />
+      <main className="min-h-[70vh] bg-[#F8FAFC] flex items-center">
+        <div className="container mx-auto px-4 py-16 text-center max-w-2xl">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
+            {/* Animated 404 */}
+            <div className="relative mb-8">
+              <span className="text-[160px] font-black font-heading leading-none select-none"
+                style={{ background: "linear-gradient(135deg, #1E5AA8, #43B97F)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                404
+              </span>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
+                  <span className="text-4xl">🌿</span>
+                </div>
+              </div>
+            </div>
 
-        <div className="text-center px-4 relative z-10 max-w-xl">
-          <div className="relative z-10 pt-8">
-            <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg border border-gray-100">
-              <svg viewBox="0 0 60 60" className="w-10 h-10 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="30" cy="30" r="26" />
-                <path d="M30 18v14M30 38v2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-              </svg>
-            </div>
-            <div className="text-8xl font-black font-heading gradient-text mb-4 select-none">404</div>
-            <h1 className="text-4xl md:text-5xl font-bold font-heading text-foreground mb-4">Page Not Found</h1>
-            <p className="text-muted text-lg mb-8 max-w-sm mx-auto">
-              Oops! The page you&apos;re looking for doesn&apos;t exist or may have been moved.
+            <h1 className="text-2xl md:text-3xl font-bold font-heading text-slate-800 mb-3">
+              Page Not Found
+            </h1>
+            <p className="text-slate-500 mb-8 leading-relaxed">
+              The page you&apos;re looking for doesn&apos;t exist or has been moved.<br />
+              Let&apos;s get you back on track.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/" className="btn-primary inline-flex items-center justify-center gap-2 text-sm">
-                <Home className="w-4 h-4" />
-                Back to Homepage
+
+            <div className="flex flex-wrap justify-center gap-3 mb-10">
+              <Link href="/"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#1E5AA8] to-[#43B97F] text-white rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-md">
+                <Home className="w-4 h-4" />Go Home
               </Link>
-              <Link href="/products" className="bg-white border border-gray-200 text-foreground px-6 py-3.5 rounded-full font-semibold text-sm hover:shadow-md transition-all inline-flex items-center justify-center gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Browse Products
-              </Link>
+              <button onClick={() => window.history.back()}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-slate-700 rounded-full font-bold text-sm hover:bg-slate-50 transition-all shadow-sm">
+                <ArrowLeft className="w-4 h-4" />Go Back
+              </button>
             </div>
-          </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {QUICK_LINKS.map((link) => (
+                <Link key={link.href} href={link.href}
+                  className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-xs font-bold text-slate-600 hover:text-emerald-700">
+                  <link.icon className="w-5 h-5 text-emerald-500" />
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </main>
       <Footer />

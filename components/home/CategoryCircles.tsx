@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Leaf, HeartPulse, Activity, Sparkles, ShieldAlert, Heart, Flame } from "lucide-react";
+import { Leaf, HeartPulse, Activity, Sparkles, Heart, Flame } from "lucide-react";
 
 const categories = [
   {

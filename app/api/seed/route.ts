@@ -121,7 +121,7 @@ const heroSlidesData = [
   {
     title: "100% Organic Ayurvedic Health Solutions",
     subtitle: "Authentic Herbs & Natural Supplements Direct from Himalayan Valleys",
-    imageUrl: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=80",
+    imageUrl: "/ayurveda-banner.png",
     buttonText: "Explore Ayurveda",
     buttonLink: "/products",
     order: 1,
@@ -218,11 +218,9 @@ export async function GET() {
     await Product.deleteMany({});
     await Product.insertMany(productsData);
 
-    // Seed HeroSlides if none exist
-    const slideCount = await HeroSlide.countDocuments();
-    if (slideCount === 0) {
-      await HeroSlide.insertMany(heroSlidesData);
-    }
+    // Recreate HeroSlides with local accurate photos
+    await HeroSlide.deleteMany({});
+    await HeroSlide.insertMany(heroSlidesData);
 
     // Seed Coupons if none exist
     const couponCount = await Coupon.countDocuments();

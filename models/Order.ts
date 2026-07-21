@@ -22,7 +22,7 @@ export interface IOrder extends mongoose.Document {
   userEmail: string;
   items: IOrderItem[];
   totalAmount: number;
-  status: "Pending" | "Dispatched" | "Delivered" | "Cancelled";
+  status: "Pending" | "Confirmed" | "Packed" | "Dispatched" | "Shipped" | "Out for Delivery" | "Delivered" | "Cancelled";
   shippingAddress: IShippingAddress;
   paymentMethod: string;
   couponCode?: string | null;
@@ -46,7 +46,7 @@ const OrderSchema = new mongoose.Schema<IOrder>(
     totalAmount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["Pending", "Dispatched", "Delivered", "Cancelled"],
+      enum: ["Pending", "Confirmed", "Packed", "Dispatched", "Shipped", "Out for Delivery", "Delivered", "Cancelled"],
       default: "Pending",
     },
     shippingAddress: {
