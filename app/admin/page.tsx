@@ -79,7 +79,7 @@ export default async function AdminDashboard() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {orders.map((order) => (
-                      <tr key={order._id}>
+                      <tr key={order._id.toString()}>
                         <td className="py-3.5 font-mono font-extrabold text-slate-700">{order.orderNumber}</td>
                         <td className="py-3.5 text-slate-500 font-bold">{order.shippingAddress.fullName}</td>
                         <td className="py-3.5 font-black text-slate-800">₹{order.totalAmount.toFixed(2)}</td>
@@ -124,7 +124,7 @@ export default async function AdminDashboard() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {recentProducts.map((p) => (
-                      <tr key={p._id}>
+                      <tr key={p._id.toString()}>
                         <td className="py-3 text-slate-700 font-bold flex items-center gap-2">
                           <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-slate-50 border shrink-0">
                             <Image src={p.imageUrl} alt={p.name} fill className="object-cover" />
