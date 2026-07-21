@@ -269,9 +269,9 @@ export default function AdminTestimonialsPage() {
                       onChange={(e) => setFormTestimonial({ ...formTestimonial, videoUrl: e.target.value })}
                       type="text"
                       className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 outline-none text-sm font-medium"
-                      placeholder="e.g. YouTube URL"
                     />
-                  )}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Thumbnail Image (Optional)</label>
@@ -345,8 +345,7 @@ export default function AdminTestimonialsPage() {
                           <div className="flex items-center gap-3">
                             {c.thumbnail && (
                               <img src={c.thumbnail} alt={c.name} className="w-10 h-10 rounded-full object-cover bg-slate-100" />
-                            </div>
-)}
+                            )}
                             <div>
                               <p className="font-bold text-sm text-slate-800">{c.name}</p>
                               <p className="text-xs text-slate-500">{c.location}</p>

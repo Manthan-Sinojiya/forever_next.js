@@ -297,7 +297,8 @@ export default function AdminPagesBuilder() {
                   )}
                 </tbody>
               </table>
-            )}
+            </div>
+          )}
         </div>
       </main>
     

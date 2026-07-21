@@ -307,6 +307,7 @@ export default function AdminNavigationBuilder() {
                               </div>
                             </div>
                           </div>
+                        </div>
                         )}
                     </div>
                   ))

@@ -217,7 +217,8 @@ export default function AdminFAQsPage() {
                   </button>
                 </div>
               </form>
-            )}
+            </div>
+          )}
 
           {loading ? (
             <div className="flex items-center justify-center h-64">

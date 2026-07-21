@@ -73,8 +73,9 @@ export default function AdminSettings() {
   };
 
   return (
-    {/* Main Container */}
+    <>
       <main className="flex-1 overflow-auto">
+        {/* Main Container */}
         <header className="h-16 bg-white border-b border-gray-100 flex items-center px-6 lg:px-8 justify-between sticky top-0 z-10">
           <h1 className="text-xl font-bold font-heading text-slate-800">Site Settings</h1>
           <span className="text-xs font-semibold bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full">Admin User</span>
@@ -191,7 +192,8 @@ export default function AdminSettings() {
                           <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                         )}
                         <span>{status.message}</span>
-                      )}
+                      </div>
+                    )}
 
                     {/* Action button */}
                     <button
@@ -265,7 +267,7 @@ export default function AdminSettings() {
         .animate-marquee {
           animation: marquee linear infinite;
         }
-      `}</style>
-    
+      </style>
+    </>
   );
 }
