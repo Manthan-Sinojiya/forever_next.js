@@ -131,7 +131,7 @@ export default async function AdminDashboard() {
                           </div>
                           <span className="truncate max-w-[150px]">{p.name}</span>
                         </td>
-                        <td className="py-3 text-slate-500 font-semibold">{p.category}</td>
+                        <td className="py-3 text-slate-500 font-semibold">{p.category.toString()}</td>
                         <td className="py-3 font-black text-emerald-600">₹{p.price}</td>
                       </tr>
                     ))}
