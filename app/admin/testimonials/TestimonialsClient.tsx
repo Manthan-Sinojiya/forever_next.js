@@ -16,10 +16,10 @@ const schema = z.object({
   designation: z.string().optional(),
   company: z.string().optional(),
   review: z.string().min(1, "Review Content is required"),
-  rating: z.coerce.number().min(1).max(5).optional(),
+  rating: z.number().min(1).max(5).optional(),
   isFeatured: z.boolean().optional(),
   status: z.enum(["active", "draft", "archived"]),
-  sortOrder: z.coerce.number(),
+  sortOrder: z.number(),
   videoType: z.enum(["none", "upload", "youtube", "vimeo"]),
   videoUrl: z.string().optional(),
   videoThumbnail: z.string().optional(),
@@ -226,7 +226,7 @@ export default function TestimonialsClient({ initialData, totalPages }: any) {
                         <input 
                           type="number"
                           min="1" max="5"
-                          {...register("rating")}
+                          {...register("rating", { setValueAs: (v) => v === "" ? undefined : Number(v) })}
                           className="w-full border border-slate-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all" 
                         />
                         <Star className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
@@ -311,7 +311,7 @@ export default function TestimonialsClient({ initialData, totalPages }: any) {
                       <label className="block text-sm font-semibold text-slate-700 mb-1.5">Sort Order</label>
                       <input 
                         type="number"
-                        {...register("sortOrder")}
+                        {...register("sortOrder", { setValueAs: (v) => v === "" ? 0 : Number(v) })}
                         className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all" 
                       />
                     </div>
