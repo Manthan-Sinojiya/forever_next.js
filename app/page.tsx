@@ -18,14 +18,14 @@ export default function Home() {
         {/* Banner Hero Carousel */}
         <Hero />
 
-        {/* India's Leading Nutrition Brand (Best Sellers) */}
-        <FeaturedProducts />
-
         {/* Deals & Coupon Offers */}
         <DealsAndCoupons />
 
         {/* Trust Badges (Choose Forever, Choose Health!) */}
         <TrustBadges />
+
+        {/* India's Leading Nutrition Brand (Best Sellers) */}
+        <FeaturedProducts />
 
         {/* Brand Story / About Us Section */}
         <About />
