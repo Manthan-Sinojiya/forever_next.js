@@ -157,7 +157,6 @@ export default function TestimonialsClient({ initialData, totalPages }: any) {
         title="Customer Reviews"
         columns={columns}
         data={initialData}
-        pageCount={totalPages}
         onAdd={() => setIsModalOpen(true)}
         onDelete={handleDelete}
         searchPlaceholder="Search testimonials..."
