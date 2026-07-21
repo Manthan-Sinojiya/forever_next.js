@@ -22,11 +22,7 @@ const productSchema = z.object({
   
   // Pricing & Stock
   mrp: z.number().min(0, "MRP must be non-negative"),
-  price: z.preprocess((val) => {
-    if (val === "" || val === null || val === undefined) return undefined;
-    const parsed = Number(val);
-    return isNaN(parsed) ? undefined : parsed;
-  }, z.number().optional()),
+  price: z.number().optional(),
   gst: z.number().optional(),
   inventory: z.number().min(0, "Inventory must be non-negative"),
   inStock: z.boolean().optional(),
@@ -346,7 +342,7 @@ export default function NewProductPage() {
                       <input 
                         type="number" 
                         step="0.01"
-                        {...register("price")} 
+                        {...register("price", { setValueAs: (v) => v === "" || v === null || v === undefined ? undefined : Number(v) })} 
                         placeholder="If empty, uses MRP"
                         className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
                       />

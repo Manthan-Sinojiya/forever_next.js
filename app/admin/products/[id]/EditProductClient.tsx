@@ -23,11 +23,7 @@ const productSchema = z.object({
   
   // Pricing & Stock
   mrp: z.number().min(0, "MRP must be non-negative"),
-  price: z.union([z.number(), z.string(), z.nan()]).optional().transform((val) => {
-    if (val === "" || val === undefined || val === null) return undefined;
-    const num = Number(val);
-    return isNaN(num) ? undefined : num;
-  }),
+  price: z.number().optional(),
   gst: z.number().optional(),
   inventory: z.number().min(0, "Inventory must be non-negative"),
   inStock: z.boolean().optional(),
@@ -351,56 +347,59 @@ export default function EditProductClient({ initialData }: { initialData: any })
                               <motion.div 
                                 initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                                 key={`${index}-${image.url}`} 
-                                draggable
-                                onDragStart={(e: React.DragEvent) => {
-                                  setDraggedItemIdx(index);
-                                  e.dataTransfer.effectAllowed = "move";
-                                }}
-                                onDragOver={(e: React.DragEvent) => e.preventDefault()}
-                                onDrop={(e: React.DragEvent) => {
-                                  e.preventDefault();
-                                  if (draggedItemIdx === null || draggedItemIdx === index) return;
-                                  const newImages = [...images];
-                                  const item = newImages[draggedItemIdx];
-                                  newImages.splice(draggedItemIdx, 1);
-                                  newImages.splice(index, 0, item);
-                                  setImages(newImages);
-                                  setDraggedItemIdx(null);
-                                }}
-                                className={`flex flex-col sm:flex-row gap-6 p-5 border rounded-2xl relative group transition-all ${draggedItemIdx === index ? 'opacity-50 border-indigo-400 bg-indigo-50/50' : 'border-slate-200/60 bg-slate-50/50 hover:border-indigo-200 hover:shadow-sm cursor-move'}`}
                               >
-                                <button 
-                                  type="button" 
-                                  onClick={() => removeImage(index)}
-                                  className="absolute top-3 right-3 p-2 text-slate-400 bg-white rounded-xl shadow-sm border border-slate-100 hover:text-rose-600 hover:border-rose-200 transition-colors z-10"
+                                <div
+                                  draggable
+                                  onDragStart={(e: React.DragEvent<HTMLDivElement>) => {
+                                    setDraggedItemIdx(index);
+                                    e.dataTransfer.effectAllowed = "move";
+                                  }}
+                                  onDragOver={(e: React.DragEvent<HTMLDivElement>) => e.preventDefault()}
+                                  onDrop={(e: React.DragEvent<HTMLDivElement>) => {
+                                    e.preventDefault();
+                                    if (draggedItemIdx === null || draggedItemIdx === index) return;
+                                    const newImages = [...images];
+                                    const item = newImages[draggedItemIdx];
+                                    newImages.splice(draggedItemIdx, 1);
+                                    newImages.splice(index, 0, item);
+                                    setImages(newImages);
+                                    setDraggedItemIdx(null);
+                                  }}
+                                  className={`flex flex-col sm:flex-row gap-6 p-5 border rounded-2xl relative group transition-all ${draggedItemIdx === index ? 'opacity-50 border-indigo-400 bg-indigo-50/50' : 'border-slate-200/60 bg-slate-50/50 hover:border-indigo-200 hover:shadow-sm cursor-move'}`}
                                 >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                                <div className="w-full sm:w-48 flex-shrink-0">
-                                  <ImageUpload 
-                                    value={image.url}
-                                    onChange={(url) => updateImage(index, "url", url)}
-                                    label={`Image ${index + 1}`}
-                                  />
-                                </div>
-                                <div className="flex-1 space-y-4 w-full">
-                                  <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Image URL</label>
-                                    <input 
+                                  <button 
+                                    type="button" 
+                                    onClick={() => removeImage(index)}
+                                    className="absolute top-3 right-3 p-2 text-slate-400 bg-white rounded-xl shadow-sm border border-slate-100 hover:text-rose-600 hover:border-rose-200 transition-colors z-10"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                  <div className="w-full sm:w-48 flex-shrink-0">
+                                    <ImageUpload 
                                       value={image.url}
-                                      onChange={(e) => updateImage(index, "url", e.target.value)}
-                                      placeholder="Auto-filled on upload or enter manually"
-                                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" 
+                                      onChange={(url) => updateImage(index, "url", url)}
+                                      label={`Image ${index + 1}`}
                                     />
                                   </div>
-                                  <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Alt Text (SEO)</label>
-                                    <input 
-                                      value={image.alt}
-                                      onChange={(e) => updateImage(index, "alt", e.target.value)}
-                                      placeholder="Describe the image for SEO..."
-                                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" 
-                                    />
+                                  <div className="flex-1 space-y-4 w-full">
+                                    <div>
+                                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Image URL</label>
+                                      <input 
+                                        value={image.url}
+                                        onChange={(e) => updateImage(index, "url", e.target.value)}
+                                        placeholder="Auto-filled on upload or enter manually"
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" 
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Alt Text (SEO)</label>
+                                      <input 
+                                        value={image.alt}
+                                        onChange={(e) => updateImage(index, "alt", e.target.value)}
+                                        placeholder="Describe the image for SEO..."
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50" 
+                                      />
+                                    </div>
                                   </div>
                                 </div>
                               </motion.div>
@@ -442,7 +441,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
                             <input 
                               type="number" 
                               step="0.01"
-                              {...register("price")} 
+                              {...register("price", { setValueAs: (v) => v === "" || v === null || v === undefined ? undefined : Number(v) })} 
                               placeholder="If empty, uses MRP"
                               className={`w-full bg-white border ${errors.price ? 'border-rose-300' : 'border-slate-200 hover:border-slate-300 focus:border-indigo-400 focus:ring-indigo-100'} rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all focus:ring-4`} 
                             />
