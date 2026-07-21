@@ -19,6 +19,7 @@ interface DataTableProps<T> {
   createHref?: string;
   searchPlaceholder?: string;
   exportFilename?: string;
+  onAdd?: () => void;
 }
 
 export function DataTable<T extends { _id?: string; id?: string }>({
@@ -28,7 +29,8 @@ export function DataTable<T extends { _id?: string; id?: string }>({
   onDelete,
   createHref,
   searchPlaceholder = "Search...",
-  exportFilename = "export.csv"
+  exportFilename = "export.csv",
+  onAdd
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -118,11 +120,17 @@ export function DataTable<T extends { _id?: string; id?: string }>({
             {createHref && (
               <Link 
                 href={createHref}
-                className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl transition-all shadow-sm shadow-indigo-200 font-medium text-sm whitespace-nowrap"
+                className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
               >
                 <Plus className="w-4 h-4" />
-                <span>Create New</span>
+                <span className="hidden sm:inline">Add New</span>
               </Link>
+            )}
+            {onAdd && (
+              <button onClick={onAdd} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add New</span>
+              </button>
             )}
           </div>
         </div>
