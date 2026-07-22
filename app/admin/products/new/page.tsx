@@ -49,6 +49,7 @@ const productSchema = z.object({
   metaTitle: z.string().optional(),
   metaKeywords: z.string().optional(),
   metaDescription: z.string().optional(),
+  thumbnailAlt: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -58,8 +59,7 @@ const tabs = [
   "Media",
   "Pricing & Inventory",
   "Content & Details",
-  "Healthcare Specific",
-  "SEO & Settings"
+  "Healthcare Specific"
 ];
 
 export default function NewProductPage() {
@@ -76,6 +76,7 @@ export default function NewProductPage() {
   
   // Media state
   const [thumbnail, setThumbnail] = useState<string>("");
+  const [thumbnailAlt, setThumbnailAlt] = useState<string>("");
   const [images, setImages] = useState<{ url: string; alt: string }[]>([]);
   const [draggedItemIdx, setDraggedItemIdx] = useState<number | null>(null);
 
@@ -130,6 +131,7 @@ export default function NewProductPage() {
         ...data,
         price: data.price !== undefined ? data.price : data.mrp,
         thumbnail,
+        thumbnailAlt,
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
         description: descriptionContent || data.description,
         ingredients: ingredientsContent,
@@ -201,24 +203,128 @@ export default function NewProductPage() {
             <form id="product-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               
               {activeTab === "General" && (
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-slate-800 mb-4">Basic Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Product Name *</label>
-                      <input 
-                        {...register("name")} 
-                        className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
-                      />
-                      {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-slate-800 mb-4">Basic Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Product Name *</label>
+                        <input 
+                          {...register("name")} 
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
+                        />
+                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Slug (URL) *</label>
+                        <input 
+                          {...register("slug")} 
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
+                        />
+                        {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Slug (URL) *</label>
-                      <input 
-                        {...register("slug")} 
-                        className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
-                      />
-                      {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
+                  </div>
+
+                  <div className="space-y-6 pt-6 border-t border-slate-200">
+                    <h3 className="text-sm font-semibold text-slate-800 mb-4">SEO & Visibility Settings</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-md border border-slate-200">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">Published</p>
+                          <p className="text-xs text-slate-500">Make this product visible on the storefront.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            className="sr-only peer"
+                            checked={statusVal === "active"}
+                            onChange={(e) => setValue("status", e.target.checked ? "active" : "draft")}
+                          />
+                          <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-md border border-slate-200">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">In Stock</p>
+                          <p className="text-xs text-slate-500">Allow customers to purchase this product.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            className="sr-only peer"
+                            checked={inStockVal}
+                            onChange={(e) => setValue("inStock", e.target.checked)}
+                          />
+                          <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-md border border-slate-200">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">Featured Product</p>
+                          <p className="text-xs text-slate-500">Show on homepage featured sections.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            className="sr-only peer"
+                            checked={watch("isFeatured")}
+                            onChange={(e) => setValue("isFeatured", e.target.checked)}
+                          />
+                          <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-md border border-slate-200">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">Trending / Best Seller</p>
+                          <p className="text-xs text-slate-500">Mark as trending or best seller.</p>
+                        </div>
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" {...register("isTrending")} className="accent-emerald-600" />
+                            <span className="text-sm">Trending</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" {...register("isBestSeller")} className="accent-emerald-600" />
+                            <span className="text-sm">Best Seller</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" {...register("todayDeal")} className="accent-emerald-600" />
+                            <span className="text-sm">Lightning Deal</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 mt-6 pt-6 border-t border-slate-200">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Meta Title</label>
+                        <input 
+                          {...register("metaTitle")} 
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Meta Keywords</label>
+                        <input 
+                          {...register("metaKeywords")} 
+                          placeholder="ayurveda, health, natural..."
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Meta Description</label>
+                        <textarea 
+                          {...register("metaDescription")} 
+                          rows={3}
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -229,12 +335,21 @@ export default function NewProductPage() {
                   <div className="mb-8">
                     <h3 className="text-sm font-semibold text-slate-800 mb-2">Thumbnail Image</h3>
                     <p className="text-xs text-slate-500 mb-4">Main image used for Cart, Wishlist, Checkout, and Product Cards.</p>
-                    <div className="w-48">
+                    <div className="w-full sm:w-96 space-y-4">
                       <ImageUpload 
                         value={thumbnail}
                         onChange={setThumbnail}
                         label="Thumbnail"
                       />
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Thumbnail Alt Text</label>
+                        <input 
+                          value={thumbnailAlt}
+                          onChange={(e) => setThumbnailAlt(e.target.value)}
+                          placeholder="Describe the image for SEO..."
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
+                        />
+                      </div>
                     </div>
                   </div>
                   
@@ -400,7 +515,7 @@ export default function NewProductPage() {
                     <div className="border border-slate-300 rounded-md overflow-hidden">
                       <JoditEditor
                         value={descriptionContent}
-                        config={{ readonly: false, placeholder: "Start typing..." }}
+                        config={{ readonly: false, placeholder: "Start typing...", minHeight: 400 }}
                         onBlur={newContent => setDescriptionContent(newContent)}
                       />
                     </div>
@@ -418,7 +533,7 @@ export default function NewProductPage() {
                     <div className="border border-slate-300 rounded-md overflow-hidden">
                       <JoditEditor
                         value={ingredientsContent}
-                        config={{ readonly: false, placeholder: "List of ingredients..." }}
+                        config={{ readonly: false, placeholder: "List of ingredients...", minHeight: 400 }}
                         onBlur={newContent => setIngredientsContent(newContent)}
                       />
                     </div>
@@ -428,7 +543,7 @@ export default function NewProductPage() {
                     <div className="border border-slate-300 rounded-md overflow-hidden">
                       <JoditEditor
                         value={benefitsContent}
-                        config={{ readonly: false, placeholder: "Health benefits..." }}
+                        config={{ readonly: false, placeholder: "Health benefits...", minHeight: 400 }}
                         onBlur={newContent => setBenefitsContent(newContent)}
                       />
                     </div>
@@ -438,7 +553,7 @@ export default function NewProductPage() {
                     <div className="border border-slate-300 rounded-md overflow-hidden">
                       <JoditEditor
                         value={howToUseContent}
-                        config={{ readonly: false, placeholder: "Usage instructions..." }}
+                        config={{ readonly: false, placeholder: "Usage instructions...", minHeight: 400 }}
                         onBlur={newContent => setHowToUseContent(newContent)}
                       />
                     </div>
@@ -446,105 +561,34 @@ export default function NewProductPage() {
                 </div>
               )}
 
-              {activeTab === "SEO & Settings" && (
-                <div className="space-y-6">
-                  <h3 className="text-sm font-semibold text-slate-800 mb-4">SEO & Visibility</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-md border border-slate-200">
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">Published</p>
-                        <p className="text-xs text-slate-500">Make this product visible on the storefront.</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer"
-                          checked={statusVal === "active"}
-                          onChange={(e) => setValue("status", e.target.checked ? "active" : "draft")}
-                        />
-                        <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-md border border-slate-200">
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">In Stock</p>
-                        <p className="text-xs text-slate-500">Allow customers to purchase this product.</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer"
-                          checked={inStockVal}
-                          onChange={(e) => setValue("inStock", e.target.checked)}
-                        />
-                        <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-md border border-slate-200">
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">Featured Product</p>
-                        <p className="text-xs text-slate-500">Show on homepage featured sections.</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer"
-                          checked={watch("isFeatured")}
-                          onChange={(e) => setValue("isFeatured", e.target.checked)}
-                        />
-                        <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-md border border-slate-200">
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">Trending / Best Seller</p>
-                        <p className="text-xs text-slate-500">Mark as trending or best seller.</p>
-                      </div>
-                      <div className="flex gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input type="checkbox" {...register("isTrending")} className="accent-emerald-600" />
-                          <span className="text-sm">Trending</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input type="checkbox" {...register("isBestSeller")} className="accent-emerald-600" />
-                          <span className="text-sm">Best Seller</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 mt-6 pt-6 border-t border-slate-200">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Meta Title</label>
-                      <input 
-                        {...register("metaTitle")} 
-                        className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Meta Keywords</label>
-                      <input 
-                        {...register("metaKeywords")} 
-                        placeholder="ayurveda, health, natural..."
-                        className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Meta Description</label>
-                      <textarea 
-                        {...register("metaDescription")} 
-                        rows={3}
-                        className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Navigation Buttons */}
+              <div className="flex items-center justify-between pt-6 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentIndex = tabs.indexOf(activeTab);
+                    if (currentIndex > 0) setActiveTab(tabs[currentIndex - 1]);
+                  }}
+                  disabled={tabs.indexOf(activeTab) === 0}
+                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentIndex = tabs.indexOf(activeTab);
+                    if (currentIndex < tabs.length - 1) {
+                      setActiveTab(tabs[currentIndex + 1]);
+                    } else {
+                      handleSubmit(onSubmit)();
+                    }
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md shadow-sm hover:bg-emerald-700 transition-colors"
+                >
+                  {tabs.indexOf(activeTab) === tabs.length - 1 ? "Save Product" : "Next"}
+                </button>
+              </div>
 
             </form>
           </div>

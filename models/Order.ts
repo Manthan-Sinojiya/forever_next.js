@@ -29,7 +29,10 @@ export interface IOrder extends Document {
   shippingAddress: IShippingAddress;
   pricing: IPricing;
   paymentStatus: "pending" | "paid";
-  orderStatus: "processing" | "shipped" | "delivered";
+  orderStatus: "pending" | "shipping" | "done";
+  trackingNumber?: string;
+  deliveryPartner?: string;
+  trackingUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,9 +69,12 @@ const OrderSchema = new Schema<IOrder>(
     },
     orderStatus: {
       type: String,
-      enum: ["processing", "shipped", "delivered"],
-      default: "processing",
+      enum: ["pending", "shipping", "done"],
+      default: "pending",
     },
+    trackingNumber: { type: String },
+    deliveryPartner: { type: String },
+    trackingUrl: { type: String },
   },
   { timestamps: true }
 );

@@ -9,31 +9,32 @@ import { motion } from "framer-motion";
 export default function OrderDetailsClient({ initialData }: { initialData: any }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [status, setStatus] = useState(initialData.orderStatus || "Pending");
-  const [paymentStatus, setPaymentStatus] = useState(initialData.paymentStatus || "Unpaid");
+  const [status, setStatus] = useState(initialData.orderStatus || "pending");
+  const [paymentStatus, setPaymentStatus] = useState(initialData.paymentStatus || "pending");
   const [trackingNumber, setTrackingNumber] = useState(initialData.trackingNumber || "");
+  const [deliveryPartner, setDeliveryPartner] = useState(initialData.deliveryPartner || "");
+  const [trackingUrl, setTrackingUrl] = useState(initialData.trackingUrl || "");
 
   const handleUpdate = async () => {
     setIsSubmitting(true);
     await updateOrderStatus(initialData._id, { 
       orderStatus: status,
       paymentStatus,
-      trackingNumber
+      trackingNumber,
+      deliveryPartner,
+      trackingUrl
     });
     setIsSubmitting(false);
     router.refresh();
   };
 
   const statusColors: Record<string, { bg: string; text: string; dot: string; icon: any }> = {
-    "Pending": { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", icon: Clock },
-    "Processing": { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500", icon: Package },
-    "Shipped": { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500", icon: Truck },
-    "Delivered": { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", icon: CheckCircle2 },
-    "Cancelled": { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500", icon: CheckCircle2 },
-    "Refunded": { bg: "bg-slate-100", text: "text-slate-700", dot: "bg-slate-500", icon: CheckCircle2 },
+    "pending": { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", icon: Clock },
+    "shipping": { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500", icon: Truck },
+    "done": { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", icon: CheckCircle2 },
   };
 
-  const currentStatusStyle = statusColors[status] || statusColors["Pending"];
+  const currentStatusStyle = statusColors[status.toLowerCase()] || statusColors["pending"];
   const StatusIcon = currentStatusStyle.icon;
 
   return (
@@ -151,24 +152,24 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
                 <p className="text-xs font-medium text-slate-500 mt-1">{new Date(initialData.createdAt).toLocaleString()}</p>
               </div>
 
-              <div className={`relative pl-6 transition-all duration-300 ${(status === "Processing" || status === "Shipped" || status === "Delivered") ? 'opacity-100' : 'opacity-40 grayscale'}`}>
-                <div className={`absolute -left-[9px] top-0.5 w-4 h-4 rounded-full border-4 border-white shadow-sm ring-1 ring-slate-200 ${(status === "Processing" || status === "Shipped" || status === "Delivered") ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
-                <p className="text-sm font-bold text-slate-900">Processing</p>
-                <p className="text-xs font-medium text-slate-500 mt-1">Payment verified, order is being prepared.</p>
-              </div>
-
-              <div className={`relative pl-6 transition-all duration-300 ${(status === "Shipped" || status === "Delivered") ? 'opacity-100' : 'opacity-40 grayscale'}`}>
-                <div className={`absolute -left-[9px] top-0.5 w-4 h-4 rounded-full border-4 border-white shadow-sm ring-1 ring-slate-200 ${(status === "Shipped" || status === "Delivered") ? 'bg-indigo-500' : 'bg-slate-300'}`}></div>
-                <p className="text-sm font-bold text-slate-900">Shipped</p>
+              <div className={`relative pl-6 transition-all duration-300 ${(status === "shipping" || status === "done") ? 'opacity-100' : 'opacity-40 grayscale'}`}>
+                <div className={`absolute -left-[9px] top-0.5 w-4 h-4 rounded-full border-4 border-white shadow-sm ring-1 ring-slate-200 ${(status === "shipping" || status === "done") ? 'bg-indigo-500' : 'bg-slate-300'}`}></div>
+                <p className="text-sm font-bold text-slate-900">Shipping</p>
                 {trackingNumber ? (
-                  <p className="text-xs font-medium text-slate-500 mt-1">Tracking ID: <span className="text-indigo-600 font-semibold">{trackingNumber}</span></p>
+                  <div className="text-xs font-medium text-slate-500 mt-1">
+                    <p>Partner: {deliveryPartner || "N/A"}</p>
+                    <p>Tracking ID: <span className="text-indigo-600 font-semibold">{trackingNumber}</span></p>
+                    {trackingUrl && (
+                       <a href={trackingUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Track Package</a>
+                    )}
+                  </div>
                 ) : (
                   <p className="text-xs font-medium text-slate-500 mt-1">Awaiting tracking details.</p>
                 )}
               </div>
 
-              <div className={`relative pl-6 transition-all duration-300 ${status === "Delivered" ? 'opacity-100' : 'opacity-40 grayscale'}`}>
-                <div className={`absolute -left-[9px] top-0.5 w-4 h-4 rounded-full border-4 border-white shadow-sm ring-1 ring-slate-200 ${status === "Delivered" ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+              <div className={`relative pl-6 transition-all duration-300 ${status === "done" ? 'opacity-100' : 'opacity-40 grayscale'}`}>
+                <div className={`absolute -left-[9px] top-0.5 w-4 h-4 rounded-full border-4 border-white shadow-sm ring-1 ring-slate-200 ${status === "done" ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
                 <p className="text-sm font-bold text-slate-900">Delivered</p>
                 <p className="text-xs font-medium text-slate-500 mt-1">Package has arrived at destination.</p>
               </div>
@@ -193,12 +194,9 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
                   onChange={(e) => setStatus(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl p-3 text-sm font-medium focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all cursor-pointer text-slate-900"
                 >
-                  <option value="Pending">Pending</option>
-                  <option value="Processing">Processing</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
-                  <option value="Refunded">Refunded</option>
+                  <option value="pending">Pending</option>
+                  <option value="shipping">Shipping</option>
+                  <option value="done">Done</option>
                 </select>
               </div>
               
@@ -209,10 +207,8 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
                   onChange={(e) => setPaymentStatus(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl p-3 text-sm font-medium focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all cursor-pointer text-slate-900"
                 >
-                  <option value="Unpaid">Unpaid</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Failed">Failed</option>
-                  <option value="Refunded">Refunded</option>
+                  <option value="pending">Pending</option>
+                  <option value="paid">Paid</option>
                 </select>
               </div>
 
@@ -224,10 +220,32 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
                     type="text" 
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
-                    placeholder="AWB or Link"
+                    placeholder="AWB"
                     className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl text-sm font-medium focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all text-slate-900 placeholder:text-slate-400"
                   />
                 </div>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Delivery Partner</label>
+                <input 
+                  type="text" 
+                  value={deliveryPartner}
+                  onChange={(e) => setDeliveryPartner(e.target.value)}
+                  placeholder="e.g. BlueDart, Delhivery"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl text-sm font-medium focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all text-slate-900 placeholder:text-slate-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tracking URL</label>
+                <input 
+                  type="text" 
+                  value={trackingUrl}
+                  onChange={(e) => setTrackingUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl text-sm font-medium focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all text-slate-900 placeholder:text-slate-400"
+                />
               </div>
             </div>
           </motion.div>

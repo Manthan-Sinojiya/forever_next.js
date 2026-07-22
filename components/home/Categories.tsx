@@ -89,17 +89,19 @@ const getCategoryBadgeIcon = (title: string, textColor: string) => {
   }
 };
 
-export default function Categories() {
+export default function Categories({ title, limit }: { title?: string, limit?: number }) {
   const [counts, setCounts] = useState<Record<string, number>>({});
-  
 
   // Typewriter loop states
   const [currentText, setCurrentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const word1 = "Recharge. ";
-  const word2 = "Refresh. ";
-  const word3 = "Restart.";
-  const fullText = word1 + word2 + word3;
+  const defaultFullText = "Recharge. Refresh. Restart.";
+  const fullText = title || defaultFullText;
+  
+  const words = fullText.split(' ');
+  const word1 = words[0] ? words[0] + (words.length > 1 ? ' ' : '') : "";
+  const word2 = words[1] ? words[1] + (words.length > 2 ? ' ' : '') : "";
+  const word3 = words.slice(2).join(' ');
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -208,7 +210,7 @@ export default function Categories() {
           viewport={{ once: true }}
           className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"
         >
-          {categories.map((category) => (
+          {categories.slice(0, limit || categories.length).map((category) => (
             <motion.div key={category.title} variants={itemVariants}>
               <Link
                 href={`/categories/${category.title.toLowerCase().replace(/ /g, "-")}`}

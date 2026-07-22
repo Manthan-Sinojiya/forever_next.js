@@ -30,7 +30,7 @@ const trustPoints = [
   },
 ];
 
-export default function TrustBadges() {
+export default function TrustBadges({ title, description }: { title?: string, description?: string }) {
   return (
     <section className="py-16 bg-[#F8FAFC] relative overflow-hidden border-t border-b border-slate-50">
       {/* Background decorations */}
@@ -45,10 +45,14 @@ export default function TrustBadges() {
             Uncompromising Standards
           </span>
           <h2 className="text-3xl font-extrabold font-heading text-slate-800 leading-tight mt-4">
-            Choose <span className="gradient-text font-black">Forever</span>, Choose <span className="text-emerald-600">Health</span>!
+            {title ? (
+              <span dangerouslySetInnerHTML={{ __html: title.replace(/Forever/g, '<span class="gradient-text font-black">Forever</span>').replace(/Health/g, '<span class="text-emerald-600">Health</span>') }} />
+            ) : (
+              <>Choose <span className="gradient-text font-black">Forever</span>, Choose <span className="text-emerald-600">Health</span>!</>
+            )}
           </h2>
           <p className="text-sm text-slate-450 mt-2 font-semibold">
-            We are dedicated to producing products of the highest safety and effectiveness.
+            {description || "We are dedicated to producing products of the highest safety and effectiveness."}
           </p>
         </div>
 

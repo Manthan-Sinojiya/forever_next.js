@@ -46,8 +46,8 @@ const FALLBACK_SLIDES: Slide[] = [
   }
 ];
 
-export default function Hero() {
-  const [slides] = useState<Slide[]>(FALLBACK_SLIDES);
+export default function Hero({ slides: cmsSlides }: { slides?: Slide[] }) {
+  const [slides] = useState<Slide[]>(cmsSlides && cmsSlides.length > 0 ? cmsSlides : FALLBACK_SLIDES);
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {

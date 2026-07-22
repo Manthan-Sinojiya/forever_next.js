@@ -41,7 +41,7 @@ const aboutStats = [
   { value: 50, suffix: "+", label: "Expert Doctors" },
 ];
 
-export default function About({ isPage = false }: { isPage?: boolean }) {
+export default function About({ isPage = false, title, description }: { isPage?: boolean, title?: string, description?: string }) {
   if (!isPage) {
     return (
       <section className="py-20 bg-white overflow-hidden relative" id="about">
@@ -89,11 +89,15 @@ export default function About({ isPage = false }: { isPage?: boolean }) {
               </div>
 
               <h2 className="text-4xl md:text-5xl font-black font-heading text-slate-800 leading-tight">
-                We Are Committed To Your <span className="text-[#43B97F]">Health & Purity</span>
+                {title ? (
+                  <span dangerouslySetInnerHTML={{ __html: title.replace(/Health & Purity/g, '<span class="text-[#43B97F]">Health & Purity</span>') }} />
+                ) : (
+                  <>We Are Committed To Your <span className="text-[#43B97F]">Health & Purity</span></>
+                )}
               </h2>
 
               <p className="text-slate-500 leading-relaxed font-medium">
-                At Forever Healthcare, we believe that your health is our priority. We are dedicated to providing 100% Ayurvedic solutions, trusted quality products, and export-standard excellence in every item we deliver.
+                {description || "At Forever Healthcare, we believe that your health is our priority. We are dedicated to providing 100% Ayurvedic solutions, trusted quality products, and export-standard excellence in every item we deliver."}
               </p>
 
               {/* Counter grid */}

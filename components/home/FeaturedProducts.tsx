@@ -111,7 +111,7 @@ function getOriginalPrice(price: number, id: string) {
   return Math.round(price * (1 + pct / 100));
 }
 
-export default function FeaturedProducts() {
+export default function FeaturedProducts({ title = "Best Selling Products", limit }: { title?: string, limit?: number }) {
   const [products, setProducts] = useState<Product[]>(STATIC_PRODUCTS);
   const [loading, setLoading] = useState(false);
   const [wishlisted, setWishlisted] = useState<{ [key: string]: boolean }>({});
@@ -127,14 +127,17 @@ export default function FeaturedProducts() {
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch("/api/products?featured=true");
+        const res = await fetch(`/api/products?featured=true${limit ? `&limit=${limit}` : ""}`);
         const json = await res.json();
         if (cancelled) return;
         if (json.success && json.data && json.data.length > 0) {
-          const parsed = json.data.map((p: Product & { originalPrice?: number }) => ({
+          let parsed = json.data.map((p: Product & { originalPrice?: number }) => ({
             ...p,
             originalPrice: p.originalPrice || getOriginalPrice(p.price, p._id),
           }));
+          if (limit && parsed.length > limit) {
+             parsed = parsed.slice(0, limit);
+          }
           setProducts(parsed);
         } else {
           setProducts(STATIC_PRODUCTS);
@@ -223,7 +226,9 @@ export default function FeaturedProducts() {
               </span>
             </div>
             <h2 className="text-3xl font-extrabold font-heading text-slate-800 leading-tight">
-              Best <span className="gradient-text">Selling Products</span>
+              {title.split(' ').map((word, i, arr) => 
+                i === arr.length - 1 ? <span key={i} className="gradient-text">{word}</span> : <span key={i}>{word} </span>
+              )}
             </h2>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
               Science-Backed. Ayurveda-Inspired. Wellness Evolved — Naturally.

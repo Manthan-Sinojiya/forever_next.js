@@ -24,7 +24,16 @@ export default function OrdersClient({ initialData, totalPages, initialPage, ini
       key: "customerName", 
       label: "Customer",
       render: (row: any) => (
-        <div className="font-medium text-slate-700">{row.customerName || (row.customer && row.customer.name) || "Guest"}</div>
+        <div className="font-medium text-slate-700">{row.shippingAddress?.fullName || row.customerName || (row.customer && row.customer.name) || "Guest"}</div>
+      )
+    },
+    {
+      key: "products",
+      label: "Products",
+      render: (row: any) => (
+        <div className="text-sm text-slate-600 max-w-[200px] truncate">
+          {row.items?.map((item: any) => item.name).join(", ") || "No items"}
+        </div>
       )
     },
     { 
@@ -42,19 +51,16 @@ export default function OrdersClient({ initialData, totalPages, initialPage, ini
         let styles = 'bg-slate-100 text-slate-700 border-slate-200';
         let dot = 'bg-slate-400';
         
-        if (status === 'completed' || status === 'delivered') {
+        if (status === 'done' || status === 'delivered' || status === 'completed') {
             styles = 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
             dot = 'bg-emerald-500';
-        } else if (status === 'processing') {
-            styles = 'bg-blue-50 text-blue-700 border-blue-200/60';
-            dot = 'bg-blue-500';
-        } else if (status === 'shipped') {
+        } else if (status === 'shipping' || status === 'shipped') {
             styles = 'bg-indigo-50 text-indigo-700 border-indigo-200/60';
             dot = 'bg-indigo-500';
         } else if (status === 'cancelled') {
             styles = 'bg-rose-50 text-rose-700 border-rose-200/60';
             dot = 'bg-rose-500';
-        } else if (status === 'pending') {
+        } else if (status === 'pending' || status === 'processing') {
             styles = 'bg-amber-50 text-amber-700 border-amber-200/60';
             dot = 'bg-amber-500';
         }

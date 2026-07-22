@@ -35,7 +35,18 @@ export async function getOrders(search?: string, page: number = 1, limit: number
 export async function updateOrderStatus(id: string, data: any) {
   try {
     await connectDB();
+    
+    // Check old status to see if it changed to shipping
+    const oldOrder = await Order.findById(id).populate({ path: "user", select: "name email", model: User }).lean();
+    
     const updated = await Order.findByIdAndUpdate(id, data, { new: true });
+    
+    if (oldOrder && oldOrder.orderStatus !== "shipping" && data.orderStatus === "shipping") {
+       // Mock email sending
+       console.log(`[EMAIL MOCK] Sending Shipping Email to ${oldOrder.user?.email || "unknown"} for Order #${oldOrder.orderNumber}`);
+       console.log(`[EMAIL MOCK] Tracking Number: ${data.trackingNumber || "N/A"}, Partner: ${data.deliveryPartner || "N/A"}`);
+    }
+
     revalidatePath("/admin/orders");
     return { success: true, data: updated?._id.toString() };
   } catch (error) {

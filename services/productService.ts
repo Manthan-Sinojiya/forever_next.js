@@ -15,7 +15,7 @@ export async function getProducts(options: GetProductsOptions = {}) {
   
   const query: any = {};
   if (options.todayDeal !== undefined) query.todayDeal = options.todayDeal;
-  if (options.featured !== undefined) query.featured = options.featured;
+  if (options.featured !== undefined) query.isFeatured = options.featured;
   if (options.category !== undefined) query.category = options.category;
   
   if (options.fetchAll) {
@@ -23,7 +23,7 @@ export async function getProducts(options: GetProductsOptions = {}) {
   }
   
   if (Object.keys(query).length === 0) {
-    return await Product.find({ featured: true }).limit(options.limit || 6);
+    return await Product.find({ isFeatured: true }).limit(options.limit || 6);
   }
   
   let result = Product.find(query).sort({ createdAt: -1 });

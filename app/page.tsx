@@ -10,39 +10,53 @@ import About from "@/components/home/About";
 import TrustBadges from "@/components/home/TrustBadges";
 import DynamicSections from "@/components/home/DynamicSections";
 
-export default function Home() {
+import connectDB from "@/lib/mongodb";
+import { CmsSection } from "@/models/CmsSection";
+
+export default async function Home() {
+  await connectDB();
+  const cmsSections = await CmsSection.find({ isEnabled: true }).sort({ order: 1 }).lean();
+
   return (
     <>
       <Navbar />
       <main className="flex-1 flex flex-col w-full">
-        {/* Banner Hero Carousel */}
-        <Hero />
+        {cmsSections.length > 0 ? (
+          cmsSections.map((section: any) => {
+            switch (section.type) {
+              case "HERO":
+                return <Hero key={section._id.toString()} slides={section.slides} />;
+              case "OFFERBANNER":
+                return <DealsAndCoupons key={section._id.toString()} />;
+              case "TRUSTBADGES":
+                return <TrustBadges key={section._id.toString()} title={section.title} description={section.description} />;
+              case "PRODUCTGRID":
+                return <FeaturedProducts key={section._id.toString()} title={section.title} limit={section.limit} />;
+              case "RICHCONTENT":
+                return <About key={section._id.toString()} title={section.title} description={section.description} />;
+              case "CATEGORYGRID":
+                return <Categories key={section._id.toString()} title={section.title} limit={section.limit} />;
+              case "BLOGGRID":
+                return <Blog key={section._id.toString()} title={section.title} />;
+              case "TESTIMONIALS":
+                return <Testimonials key={section._id.toString()} />;
+              default:
+                return null;
+            }
+          })
+        ) : (
+          <>
+            <Hero />
+            <DealsAndCoupons />
+            <TrustBadges />
+            <FeaturedProducts />
+            <About />
+            <Categories />
+            <Blog />
+            <Testimonials />
+          </>
+        )}
 
-        {/* Deals & Coupon Offers */}
-        <DealsAndCoupons />
-
-        {/* Trust Badges (Choose Forever, Choose Health!) */}
-        <TrustBadges />
-
-        {/* India's Leading Nutrition Brand (Best Sellers) */}
-        <FeaturedProducts />
-
-        {/* Brand Story / About Us Section */}
-        <About />
-
-        {/* Categories Grid */}
-        <Categories />
-
-        {/* Health Insights & Blog Articles */}
-        <Blog />
-
-        {/* Customer Testimonials */}
-        <Testimonials />
-
-        {/* E-Commerce Platform Marketplaces availability */}
-        {/* <Marketplaces /> */}
-
-        {/* Dynamic CMS Sections */}
         <DynamicSections />
       </main>
       <Footer />

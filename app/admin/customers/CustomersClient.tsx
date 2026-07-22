@@ -3,7 +3,8 @@
 import { useRouter, usePathname } from "next/navigation";
 import { DataTable } from "@/components/admin/DataTable";
 import { deleteCustomer } from "@/actions/admin/customers";
-import { User, Mail, Phone } from "lucide-react";
+import { User, Mail, Phone, Eye } from "lucide-react";
+import Link from "next/link";
 
 export default function CustomersClient({ initialData, totalPages, initialPage, initialSearch }: any) {
   const router = useRouter();
@@ -61,6 +62,15 @@ export default function CustomersClient({ initialData, totalPages, initialPage, 
       label: "Joined",
       render: (row: any) => (
         <span className="text-slate-500 font-medium">{new Date(row.createdAt || new Date()).toLocaleDateString()}</span>
+      )
+    },
+    {
+      key: "actions",
+      label: "View",
+      render: (row: any) => (
+        <Link href={`/admin/customers/${row._id}`} className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+          <Eye className="w-4 h-4" />
+        </Link>
       )
     }
   ];

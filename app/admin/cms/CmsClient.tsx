@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-
+import { useRouter } from "next/navigation";
+import { bulkSaveCmsSections } from "@/actions/admin/cms";
 import { ArrowUp, ArrowDown, Trash2, Eye, Save, Globe, ChevronDown } from "lucide-react";
 
 type SectionType = "CATEGORYGRID" | "HERO" | "PRODUCTGRID" | "RICHCONTENT" | "OFFERBANNER" | "BLOGGRID";
@@ -40,12 +41,25 @@ const mockSections: Section[] = [
 ];
 
 export default function CmsClient({ initialData }: { initialData: any[] }) {
-  
-  const [sections, setSections] = useState<Section[]>(initialData.length > 0 ? initialData : mockSections);
+  const router = useRouter();
+  // Ensure sections have an id for the frontend
+  const initialSections = initialData.length > 0 
+    ? initialData.map((s, i) => ({ ...s, id: s._id || String(i) }))
+    : mockSections;
+
+  const [sections, setSections] = useState<Section[]>(initialSections);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const activeSection = sections.find((s) => s.id === activeSectionId);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await bulkSaveCmsSections(sections);
+    setIsSaving(false);
+    router.refresh();
+  };
 
   return (
     <div className="flex h-[calc(100vh-6rem)] bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden relative">
@@ -67,15 +81,14 @@ export default function CmsClient({ initialData }: { initialData: any[] }) {
                 <div className="fixed inset-0 z-10" onClick={() => setShowAddMenu(false)}></div>
                 <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-200 rounded-md shadow-lg z-20 py-1 text-sm text-slate-700">
                   <div className="px-3 py-1.5 bg-slate-100 text-slate-500 font-medium text-xs">+ Add Section</div>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate-50">Hero Section</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate-50">Product Collection</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate-50">Category Grid</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate-50">Offer Banner</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate-50">Brand Carousel</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate-50">Testimonials</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate-50">Blog Grid</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate-50">FAQ Section</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate-50">Rich Content Block</button>
+                  <button onClick={() => { setSections([...sections, { id: Date.now().toString(), type: "HERO", title: "New Hero Section", isEnabled: true }]); setShowAddMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">Hero Section</button>
+                  <button onClick={() => { setSections([...sections, { id: Date.now().toString(), type: "PRODUCTGRID", title: "New Product Grid", isEnabled: true }]); setShowAddMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">Product Collection</button>
+                  <button onClick={() => { setSections([...sections, { id: Date.now().toString(), type: "CATEGORYGRID", title: "New Category Grid", isEnabled: true }]); setShowAddMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">Category Grid</button>
+                  <button onClick={() => { setSections([...sections, { id: Date.now().toString(), type: "OFFERBANNER", title: "New Offer Banner", isEnabled: true }]); setShowAddMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">Offer Banner</button>
+                  <button onClick={() => { setSections([...sections, { id: Date.now().toString(), type: "TRUSTBADGES", title: "New Trust Badges", isEnabled: true }]); setShowAddMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">Trust Badges</button>
+                  <button onClick={() => { setSections([...sections, { id: Date.now().toString(), type: "TESTIMONIALS", title: "New Testimonials", isEnabled: true }]); setShowAddMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">Testimonials</button>
+                  <button onClick={() => { setSections([...sections, { id: Date.now().toString(), type: "BLOGGRID", title: "New Blog Grid", isEnabled: true }]); setShowAddMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">Blog Grid</button>
+                  <button onClick={() => { setSections([...sections, { id: Date.now().toString(), type: "RICHCONTENT", title: "New Rich Content Block", isEnabled: true }]); setShowAddMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">Rich Content Block</button>
                 </div>
               </>
             )}
@@ -83,7 +96,7 @@ export default function CmsClient({ initialData }: { initialData: any[] }) {
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {sections.map((section) => (
+          {sections.map((section, index) => (
             <div 
               key={section.id} 
               onClick={() => setActiveSectionId(section.id)}
@@ -102,10 +115,24 @@ export default function CmsClient({ initialData }: { initialData: any[] }) {
                 </div>
               </div>
               <div className="flex items-center gap-1.5 text-slate-400">
-                <button className="p-1 hover:text-emerald-600 rounded transition-colors" onClick={(e) => e.stopPropagation()}>
+                <button className="p-1 hover:text-emerald-600 rounded transition-colors" onClick={(e) => {
+                  e.stopPropagation();
+                  if (index > 0) {
+                    const newSections = [...sections];
+                    [newSections[index - 1], newSections[index]] = [newSections[index], newSections[index - 1]];
+                    setSections(newSections);
+                  }
+                }}>
                   <ArrowUp size={16} />
                 </button>
-                <button className="p-1 hover:text-emerald-600 rounded transition-colors" onClick={(e) => e.stopPropagation()}>
+                <button className="p-1 hover:text-emerald-600 rounded transition-colors" onClick={(e) => {
+                  e.stopPropagation();
+                  if (index < sections.length - 1) {
+                    const newSections = [...sections];
+                    [newSections[index + 1], newSections[index]] = [newSections[index], newSections[index + 1]];
+                    setSections(newSections);
+                  }
+                }}>
                   <ArrowDown size={16} />
                 </button>
                 <button className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" onClick={(e) => {
@@ -129,16 +156,13 @@ export default function CmsClient({ initialData }: { initialData: any[] }) {
             <span className="px-2 py-0.5 text-xs font-bold text-emerald-700 bg-emerald-100 rounded">LIVE</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors">
+            <button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50"
+            >
               <Save size={16} />
-              Save Draft
-            </button>
-            <button className="px-4 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-600 rounded-md hover:bg-emerald-50 transition-colors">
-              Set as Homepage
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 transition-colors">
-              <Globe size={16} />
-              Publish Live
+              {isSaving ? "Saving..." : "Save Page Layout"}
             </button>
           </div>
         </div>
@@ -176,7 +200,7 @@ export default function CmsClient({ initialData }: { initialData: any[] }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Internal Title / Name</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Heading / Title</label>
                   <input 
                     type="text" 
                     value={activeSection.title}
@@ -186,13 +210,18 @@ export default function CmsClient({ initialData }: { initialData: any[] }) {
                     }}
                     className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow"
                   />
+                  <p className="text-xs text-slate-500 mt-1">This text will be displayed on the frontend.</p>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Subtitle</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Subtitle / Description</label>
                   <input 
                     type="text" 
-                    defaultValue={activeSection.subtitle || ""}
+                    value={activeSection.description || ""}
+                    onChange={(e) => {
+                      const newSections = sections.map(s => s.id === activeSection.id ? { ...s, description: e.target.value } : s);
+                      setSections(newSections);
+                    }}
                     className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow"
                   />
                 </div>

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { User } from "@/models/User";
+import { Order } from "@/models/Order";
 import connectDB from "@/lib/mongodb";
 
 export async function getCustomers(search?: string, page: number = 1, limit: number = 10) {
@@ -49,5 +50,25 @@ export async function deleteCustomer(id: string) {
   } catch (error) {
     console.error("Error deleting customer:", error);
     return { success: false, error: "Failed to delete customer" };
+  }
+}
+
+export async function getCustomerDetails(id: string) {
+  try {
+    await connectDB();
+    const customer = await User.findById(id).lean();
+    if (!customer) return { success: false, error: "Customer not found" };
+
+    const orders = await Order.find({ user: id }).sort({ createdAt: -1 }).lean();
+
+    const data = {
+      ...customer,
+      orders
+    };
+
+    return { success: true, data: JSON.parse(JSON.stringify(data)) };
+  } catch (error) {
+    console.error("Error fetching customer details:", error);
+    return { success: false, error: "Failed to fetch customer details" };
   }
 }

@@ -25,7 +25,7 @@ export default function NavigationForm({ menu }: { menu: any }) {
     }
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: "links"
   });
@@ -153,17 +153,27 @@ export default function NavigationForm({ menu }: { menu: any }) {
                         <div className="w-4 h-4 border-l-2 border-b-2 border-slate-300 rounded-bl" />
                         <div className="flex-1 grid grid-cols-2 gap-4">
                           <input
+                            {...register(`links.${index}.subItems.${subIndex}.label`)}
                             defaultValue={sub.label}
                             placeholder="Label"
                             className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow bg-white"
                           />
                           <input
+                            {...register(`links.${index}.subItems.${subIndex}.url`)}
                             defaultValue={sub.url}
                             placeholder="URL path"
                             className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow bg-white"
                           />
                         </div>
-                        <button type="button" className="p-2 text-red-400 hover:text-red-600 transition-colors">
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const currentField = fields[index] as any;
+                            const newSubItems = currentField.subItems.filter((_: any, i: number) => i !== subIndex);
+                            update(index, { ...currentField, subItems: newSubItems });
+                          }}
+                          className="p-2 text-red-400 hover:text-red-600 transition-colors"
+                        >
                           <Trash2 size={18} />
                         </button>
                       </div>
@@ -172,7 +182,15 @@ export default function NavigationForm({ menu }: { menu: any }) {
                 )}
                 
                 <div className="mt-3 ml-8">
-                  <button type="button" className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const currentField = fields[index] as any;
+                      const newSubItems = [...(currentField.subItems || []), { label: "", url: "" }];
+                      update(index, { ...currentField, subItems: newSubItems });
+                    }}
+                    className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors"
+                  >
                     <Plus size={16} /> Add Sub Item
                   </button>
                 </div>

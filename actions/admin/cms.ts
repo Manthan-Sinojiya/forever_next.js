@@ -71,3 +71,25 @@ export async function deleteCmsSection(id: string) {
     return { success: false, error: "Failed to delete CMS section" };
   }
 }
+
+export async function bulkSaveCmsSections(sections: any[]) {
+  try {
+    await connectDB();
+    // For simplicity, we just delete all and insert the new ones in order
+    await CmsSection.deleteMany({});
+    
+    const sectionsToInsert = sections.map((s, index) => {
+       const { id, _id, ...rest } = s; // remove frontend IDs
+       return { ...rest, order: index };
+    });
+
+    await CmsSection.insertMany(sectionsToInsert);
+
+    revalidatePath("/");
+    revalidatePath("/admin/cms");
+    return { success: true };
+  } catch (error) {
+    console.error("Error bulk saving CMS sections:", error);
+    return { success: false, error: "Failed to save CMS sections" };
+  }
+}

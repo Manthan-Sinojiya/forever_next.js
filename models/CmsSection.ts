@@ -1,10 +1,17 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface ICmsSection extends Document {
-  sectionName: string;
-  type: "hero" | "grid" | "carousel";
+  title: string;
+  type: string;
+  subtitle?: string;
+  description?: string;
   order: number;
-  isActive: boolean;
+  isEnabled: boolean;
+  limit?: number;
+  cardStyle?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  slides?: any[];
   content?: any;
   createdAt: Date;
   updatedAt: Date;
@@ -12,10 +19,17 @@ export interface ICmsSection extends Document {
 
 const CmsSectionSchema = new Schema<ICmsSection>(
   {
-    sectionName: { type: String, required: true },
-    type: { type: String, enum: ["hero", "grid", "carousel"], required: true },
+    title: { type: String, required: true },
+    type: { type: String, required: true },
+    subtitle: { type: String },
+    description: { type: String },
     order: { type: Number, required: true, default: 0 },
-    isActive: { type: Boolean, default: true },
+    isEnabled: { type: Boolean, default: true },
+    limit: { type: Number },
+    cardStyle: { type: String },
+    buttonText: { type: String },
+    buttonLink: { type: String },
+    slides: { type: [Schema.Types.Mixed] },
     content: { type: Schema.Types.Mixed },
   },
   { timestamps: true }

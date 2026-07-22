@@ -50,6 +50,7 @@ const productSchema = z.object({
   metaTitle: z.string().optional(),
   metaKeywords: z.string().optional(),
   metaDescription: z.string().optional(),
+  thumbnailAlt: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -59,8 +60,7 @@ const tabs = [
   "Media",
   "Pricing & Inventory",
   "Content & Details",
-  "Healthcare Specific",
-  "SEO & Settings"
+  "Healthcare Specific"
 ];
 
 export default function EditProductClient({ initialData }: { initialData: any }) {
@@ -77,6 +77,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
   
   // Media state
   const [thumbnail, setThumbnail] = useState<string>(initialData?.thumbnail || "");
+  const [thumbnailAlt, setThumbnailAlt] = useState<string>(initialData?.thumbnailAlt || "");
   const [images, setImages] = useState<{ url: string; alt: string }[]>(initialData?.images || []);
   const [draggedItemIdx, setDraggedItemIdx] = useState<number | null>(null);
 
@@ -146,6 +147,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
         ...data,
         price: data.price !== undefined ? data.price : data.mrp,
         thumbnail,
+        thumbnailAlt,
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
         description: descriptionContent || data.description,
         ingredients: ingredientsContent,
@@ -295,6 +297,129 @@ export default function EditProductClient({ initialData }: { initialData: any })
                           {errors.slug && <p className="flex items-center gap-1 text-rose-500 text-xs mt-1.5 font-medium"><AlertCircle className="w-3 h-3"/> {errors.slug.message}</p>}
                         </div>
                       </div>
+
+                      <div className="space-y-8 pt-6 border-t border-slate-200 mt-8">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-900 tracking-tight">SEO & Visibility</h3>
+                          <p className="text-sm text-slate-500 mt-1">Control how your product appears on the store and search engines.</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <label className={`
+                            relative flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all
+                            ${statusVal === "active" ? 'bg-indigo-50/50 border-indigo-200' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}
+                          `}>
+                            <div>
+                              <p className={`text-sm font-bold ${statusVal === "active" ? 'text-indigo-900' : 'text-slate-700'}`}>Published Status</p>
+                              <p className="text-xs text-slate-500 mt-0.5">Visible on storefront</p>
+                            </div>
+                            <div className="relative inline-flex items-center">
+                              <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={statusVal === "active"}
+                                onChange={(e) => setValue("status", e.target.checked ? "active" : "draft")}
+                              />
+                              <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                            </div>
+                          </label>
+
+                          <label className={`
+                            relative flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all
+                            ${inStockVal ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}
+                          `}>
+                            <div>
+                              <p className={`text-sm font-bold ${inStockVal ? 'text-emerald-900' : 'text-slate-700'}`}>In Stock</p>
+                              <p className="text-xs text-slate-500 mt-0.5">Available for purchase</p>
+                            </div>
+                            <div className="relative inline-flex items-center">
+                              <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={inStockVal}
+                                onChange={(e) => setValue("inStock", e.target.checked)}
+                              />
+                              <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div>
+                            </div>
+                          </label>
+
+                          <label className={`
+                            relative flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all
+                            ${watch("isFeatured") ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}
+                          `}>
+                            <div>
+                              <p className={`text-sm font-bold ${watch("isFeatured") ? 'text-amber-900' : 'text-slate-700'}`}>Featured Product</p>
+                              <p className="text-xs text-slate-500 mt-0.5">Show in featured sections</p>
+                            </div>
+                            <div className="relative inline-flex items-center">
+                              <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={watch("isFeatured")}
+                                onChange={(e) => setValue("isFeatured", e.target.checked)}
+                              />
+                              <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 shadow-inner"></div>
+                            </div>
+                          </label>
+
+                          <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col justify-center gap-3">
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                              <div className="relative flex items-center justify-center">
+                                <input type="checkbox" {...register("isTrending")} className="peer sr-only" />
+                                <div className="w-5 h-5 border-2 border-slate-300 rounded-md peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-colors group-hover:border-indigo-400"></div>
+                                <Check className="w-3.5 h-3.5 text-white absolute opacity-0 peer-checked:opacity-100 pointer-events-none" />
+                              </div>
+                              <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">Mark as Trending</span>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                              <div className="relative flex items-center justify-center">
+                                <input type="checkbox" {...register("isBestSeller")} className="peer sr-only" />
+                                <div className="w-5 h-5 border-2 border-slate-300 rounded-md peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-colors group-hover:border-indigo-400"></div>
+                                <Check className="w-3.5 h-3.5 text-white absolute opacity-0 peer-checked:opacity-100 pointer-events-none" />
+                              </div>
+                              <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">Mark as Best Seller</span>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                              <div className="relative flex items-center justify-center">
+                                <input type="checkbox" {...register("todayDeal")} className="peer sr-only" />
+                                <div className="w-5 h-5 border-2 border-slate-300 rounded-md peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-colors group-hover:border-indigo-400"></div>
+                                <Check className="w-3.5 h-3.5 text-white absolute opacity-0 peer-checked:opacity-100 pointer-events-none" />
+                              </div>
+                              <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">Lightning Deal</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="space-y-6 pt-6 border-t border-slate-200/60 mt-8">
+                          <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Search Engine Optimization</h4>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Meta Title</label>
+                            <input 
+                              {...register("metaTitle")} 
+                              className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Meta Keywords</label>
+                            <input 
+                              {...register("metaKeywords")} 
+                              placeholder="ayurveda, health, natural..."
+                              className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Meta Description</label>
+                            <textarea 
+                              {...register("metaDescription")} 
+                              rows={3}
+                              className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-4 focus:bg-white resize-y" 
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </motion.div>
                   )}
 
@@ -307,12 +432,21 @@ export default function EditProductClient({ initialData }: { initialData: any })
                       <div className="mb-8">
                         <h3 className="text-lg font-bold text-slate-900 tracking-tight">Thumbnail Image</h3>
                         <p className="text-sm text-slate-500 mt-1 mb-4">Main image used for Cart, Wishlist, Checkout, and Product Cards.</p>
-                        <div className="w-48">
+                        <div className="w-full sm:w-96 space-y-4">
                           <ImageUpload 
                             value={thumbnail}
                             onChange={setThumbnail}
                             label="Thumbnail"
                           />
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Thumbnail Alt Text</label>
+                            <input 
+                              value={thumbnailAlt}
+                              onChange={(e) => setThumbnailAlt(e.target.value)}
+                              placeholder="Describe the image for SEO..."
+                              className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
+                            />
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center justify-between border-t border-slate-200 pt-8">
@@ -508,7 +642,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
                         <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-400 transition-all">
                           <JoditEditor
                             value={descriptionContent}
-                            config={{ readonly: false, placeholder: "Start typing the full description here..." }}
+                            config={{ readonly: false, placeholder: "Start typing the full description here...", minHeight: 400 }}
                             onBlur={newContent => setDescriptionContent(newContent)}
                           />
                         </div>
@@ -533,7 +667,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
                           <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm focus-within:ring-4 focus-within:ring-indigo-100 transition-all">
                             <JoditEditor
                               value={ingredientsContent}
-                              config={{ readonly: false, placeholder: "List of ingredients and their amounts..." }}
+                              config={{ readonly: false, placeholder: "List of ingredients and their amounts...", minHeight: 400 }}
                               onBlur={newContent => setIngredientsContent(newContent)}
                             />
                           </div>
@@ -543,7 +677,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
                           <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm focus-within:ring-4 focus-within:ring-indigo-100 transition-all">
                             <JoditEditor
                               value={benefitsContent}
-                              config={{ readonly: false, placeholder: "Health benefits of this product..." }}
+                              config={{ readonly: false, placeholder: "Health benefits of this product...", minHeight: 400 }}
                               onBlur={newContent => setBenefitsContent(newContent)}
                             />
                           </div>
@@ -553,7 +687,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
                           <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm focus-within:ring-4 focus-within:ring-indigo-100 transition-all">
                             <JoditEditor
                               value={howToUseContent}
-                              config={{ readonly: false, placeholder: "Dosage and usage instructions..." }}
+                              config={{ readonly: false, placeholder: "Dosage and usage instructions...", minHeight: 400 }}
                               onBlur={newContent => setHowToUseContent(newContent)}
                             />
                           </div>
@@ -561,129 +695,39 @@ export default function EditProductClient({ initialData }: { initialData: any })
                       </div>
                     </motion.div>
                   )}
-
-                  {activeTab === "SEO & Settings" && (
-                    <motion.div 
-                      key="seo"
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}
-                      className="space-y-8"
-                    >
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900 tracking-tight">SEO & Visibility</h3>
-                        <p className="text-sm text-slate-500 mt-1">Control how your product appears on the store and search engines.</p>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <label className={`
-                          relative flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all
-                          ${statusVal === "active" ? 'bg-indigo-50/50 border-indigo-200' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}
-                        `}>
-                          <div>
-                            <p className={`text-sm font-bold ${statusVal === "active" ? 'text-indigo-900' : 'text-slate-700'}`}>Published Status</p>
-                            <p className="text-xs text-slate-500 mt-0.5">Visible on storefront</p>
-                          </div>
-                          <div className="relative inline-flex items-center">
-                            <input 
-                              type="checkbox" 
-                              className="sr-only peer"
-                              checked={statusVal === "active"}
-                              onChange={(e) => setValue("status", e.target.checked ? "active" : "draft")}
-                            />
-                            <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
-                          </div>
-                        </label>
-
-                        <label className={`
-                          relative flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all
-                          ${inStockVal ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}
-                        `}>
-                          <div>
-                            <p className={`text-sm font-bold ${inStockVal ? 'text-emerald-900' : 'text-slate-700'}`}>In Stock</p>
-                            <p className="text-xs text-slate-500 mt-0.5">Available for purchase</p>
-                          </div>
-                          <div className="relative inline-flex items-center">
-                            <input 
-                              type="checkbox" 
-                              className="sr-only peer"
-                              checked={inStockVal}
-                              onChange={(e) => setValue("inStock", e.target.checked)}
-                            />
-                            <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 shadow-inner"></div>
-                          </div>
-                        </label>
-
-                        <label className={`
-                          relative flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all
-                          ${watch("isFeatured") ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}
-                        `}>
-                          <div>
-                            <p className={`text-sm font-bold ${watch("isFeatured") ? 'text-amber-900' : 'text-slate-700'}`}>Featured Product</p>
-                            <p className="text-xs text-slate-500 mt-0.5">Show in featured sections</p>
-                          </div>
-                          <div className="relative inline-flex items-center">
-                            <input 
-                              type="checkbox" 
-                              className="sr-only peer"
-                              checked={watch("isFeatured")}
-                              onChange={(e) => setValue("isFeatured", e.target.checked)}
-                            />
-                            <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 shadow-inner"></div>
-                          </div>
-                        </label>
-
-                        <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col justify-center gap-3">
-                          <label className="flex items-center gap-3 cursor-pointer group">
-                            <div className="relative flex items-center justify-center">
-                              <input type="checkbox" {...register("isTrending")} className="peer sr-only" />
-                              <div className="w-5 h-5 border-2 border-slate-300 rounded-md peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-colors group-hover:border-indigo-400"></div>
-                              <Check className="w-3.5 h-3.5 text-white absolute opacity-0 peer-checked:opacity-100 pointer-events-none" />
-                            </div>
-                            <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">Mark as Trending</span>
-                          </label>
-                          <label className="flex items-center gap-3 cursor-pointer group">
-                            <div className="relative flex items-center justify-center">
-                              <input type="checkbox" {...register("isBestSeller")} className="peer sr-only" />
-                              <div className="w-5 h-5 border-2 border-slate-300 rounded-md peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-colors group-hover:border-indigo-400"></div>
-                              <Check className="w-3.5 h-3.5 text-white absolute opacity-0 peer-checked:opacity-100 pointer-events-none" />
-                            </div>
-                            <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">Mark as Best Seller</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="space-y-6 pt-6 border-t border-slate-200/60 mt-8">
-                        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Search Engine Optimization</h4>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1.5">Meta Title</label>
-                          <input 
-                            {...register("metaTitle")} 
-                            className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1.5">Meta Keywords</label>
-                          <input 
-                            {...register("metaKeywords")} 
-                            placeholder="ayurveda, health, natural..."
-                            className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1.5">Meta Description</label>
-                          <textarea 
-                            {...register("metaDescription")} 
-                            rows={3}
-                            className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-4 focus:bg-white resize-y" 
-                          />
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
                   
                 </AnimatePresence>
+
+                {/* Navigation Buttons */}
+                <div className="flex items-center justify-between pt-8 mt-8 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentIndex = tabs.indexOf(activeTab);
+                      if (currentIndex > 0) setActiveTab(tabs[currentIndex - 1]);
+                    }}
+                    disabled={tabs.indexOf(activeTab) === 0}
+                    className="px-5 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentIndex = tabs.indexOf(activeTab);
+                      if (currentIndex < tabs.length - 1) {
+                        setActiveTab(tabs[currentIndex + 1]);
+                        handleSubmit(onSubmit)(); // Auto-save on next
+                      } else {
+                        handleSubmit(onSubmit)();
+                      }
+                    }}
+                    disabled={isSubmitting}
+                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl shadow-sm shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-70 transition-all"
+                  >
+                    {isSubmitting ? "Saving..." : (tabs.indexOf(activeTab) === tabs.length - 1 ? "Save All Changes" : "Next & Save")}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

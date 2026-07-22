@@ -45,7 +45,7 @@ const BLOG_POSTS: BlogPost[] = [
   },
 ];
 
-export default function Blog() {
+export default function Blog({ title }: { title?: string }) {
   return (
     <section className="section-padding bg-white relative overflow-hidden">
       {/* Background decorations */}
@@ -61,7 +61,11 @@ export default function Blog() {
               Latest Insights
             </div>
             <h2 className="text-3xl lg:text-4xl font-extrabold font-heading text-slate-800">
-              Health Articles & <span className="gradient-text">Wellness Tips</span>
+              {title ? (
+                <span dangerouslySetInnerHTML={{ __html: title.replace(/Wellness Tips/g, '<span class="gradient-text">Wellness Tips</span>') }} />
+              ) : (
+                <>Health Articles & <span className="gradient-text">Wellness Tips</span></>
+              )}
             </h2>
             <p className="text-muted text-sm mt-2 max-w-xl">
               Read our curated collection of health guides written by certified healthcare and Ayurvedic experts.

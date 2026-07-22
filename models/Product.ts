@@ -33,6 +33,7 @@ export interface IProduct extends Document {
   storage?: string;
   
   thumbnail?: string;
+  thumbnailAlt?: string;
   images: {
     url: string;
     publicId?: string;
@@ -46,6 +47,7 @@ export interface IProduct extends Document {
   isTrending: boolean;
   isBestSeller: boolean;
   isNewArrival: boolean;
+  todayDeal: boolean;
   
   // Variants
   variants: {
@@ -101,6 +103,7 @@ const ProductSchema = new Schema<IProduct>(
     storage: { type: String },
     
     thumbnail: { type: String },
+    thumbnailAlt: { type: String },
     images: [
       {
         url: { type: String, required: true },
@@ -119,6 +122,7 @@ const ProductSchema = new Schema<IProduct>(
     isTrending: { type: Boolean, default: false },
     isBestSeller: { type: Boolean, default: false },
     isNewArrival: { type: Boolean, default: false },
+    todayDeal: { type: Boolean, default: false },
     
     variants: [
       {
