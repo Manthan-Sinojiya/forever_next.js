@@ -603,8 +603,6 @@ export default function EditProductClient({ initialData }: { initialData: any })
                         </div>
                       </div>
                       
-                      </div>
-                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-1.5">Tax Setup</label>

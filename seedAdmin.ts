@@ -51,8 +51,28 @@ async function seedAdmin() {
       await newAdmin.save();
       console.log(`Successfully created admin user.\nEmail: ${adminEmail}\nPassword: ${adminPassword}`);
     }
+
+    const userEmail = "user@foreverhealthcare.com";
+    const userPassword = "password123";
+
+    const existingUser = await User.findOne({ email: userEmail });
+    if (existingUser) {
+      console.log("Standard user already exists:", userEmail);
+    } else {
+      const hashedPassword = await bcrypt.hash(userPassword, 10);
+      const newUser = new User({
+        name: "Standard User",
+        email: userEmail,
+        password: hashedPassword,
+        role: "user",
+        status: "active",
+      });
+
+      await newUser.save();
+      console.log(`Successfully created standard user.\nEmail: ${userEmail}\nPassword: ${userPassword}`);
+    }
   } catch (error) {
-    console.error("Error seeding admin:", error);
+    console.error("Error seeding users:", error);
   } finally {
     await mongoose.disconnect();
   }
