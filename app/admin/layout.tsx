@@ -170,9 +170,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     localStorage.removeItem("userRole");
     localStorage.removeItem("userName");
     localStorage.removeItem("userEmail");
+    localStorage.removeItem("userPhone");
+    if (typeof window !== "undefined") {
+      sessionStorage.clear();
+    }
     window.dispatchEvent(new Event("storage"));
-    await signOut({ redirect: false });
-    router.push("/");
+    try {
+      await signOut({ callbackUrl: "/login", redirect: true });
+    } catch (err) {
+      console.error("Admin logout error:", err);
+      window.location.href = "/login";
+    }
   };
 
   // Handle scroll effect for header

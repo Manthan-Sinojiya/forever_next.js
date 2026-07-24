@@ -151,9 +151,16 @@ function ProfileContent() {
     localStorage.removeItem("userName");
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userPhone");
+    if (typeof window !== "undefined") {
+      sessionStorage.clear();
+    }
     window.dispatchEvent(new Event("storage"));
-    await signOut({ redirect: false });
-    router.push("/");
+    try {
+      await signOut({ callbackUrl: "/login", redirect: true });
+    } catch (err) {
+      console.error("Profile logout error:", err);
+      window.location.href = "/login";
+    }
   };
 
   const avatar = userName?.charAt(0)?.toUpperCase() || "U";
