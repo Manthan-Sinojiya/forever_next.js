@@ -14,6 +14,31 @@ import toast from "react-hot-toast";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
+const joditConfig = {
+  readonly: false,
+  placeholder: "Start typing...",
+  minHeight: 300,
+  hidePoweredByJodit: true,
+  showPathInStatusbar: false,
+  showCharsCounter: false,
+  showWordsCounter: false,
+  uploader: {
+    insertImageAsBase64URI: true,
+    insertVideoAsBase64URI: true,
+  },
+  buttons: [
+    'source', '|',
+    'bold', 'italic', 'underline', 'strikethrough', '|',
+    'superscript', 'subscript', '|',
+    'ul', 'ol', '|',
+    'outdent', 'indent', '|',
+    'font', 'fontsize', 'brush', 'paragraph', '|',
+    'image', 'video', 'file', 'table', 'link', '|',
+    'align', 'undo', 'redo', '|',
+    'hr', 'eraser', 'fullsize', 'print', 'about'
+  ],
+};
+
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
   slug: z.string().min(1, "Slug is required"),
@@ -56,11 +81,22 @@ const productSchema = z.object({
   isNewArrival: z.boolean().optional(),
   
   // SEO
-  metaTitle: z.string().optional(),
+  metaTitle: z.string().max(58, "Meta title must be maximum 58 characters").optional(),
   metaKeywords: z.string().optional(),
-  metaDescription: z.string().optional(),
+  metaDescription: z.string().max(155, "Meta description must be maximum 155 characters").optional(),
   thumbnailAlt: z.string().optional(),
   todayDeal: z.boolean().optional(),
+  
+  // Variants
+  variants: z.array(
+    z.object({
+      attribute: z.string().min(1, "Attribute is required"),
+      value: z.string().min(1, "Value is required"),
+      price: z.number().min(0, "Price must be non-negative"),
+      inventory: z.number().min(0, "Inventory must be non-negative"),
+      sku: z.string().optional()
+    })
+  ).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -68,16 +104,28 @@ type ProductFormValues = z.infer<typeof productSchema>;
 const tabs = [
   "General",
   "Media",
-  "Pricing, Inventory & Delivery",
   "Content & Details",
-  "Healthcare Specific"
+  "Healthcare Specific",
+  "Pricing, Inventory & Delivery"
 ];
+
+
 
 export default function EditProductClient({ initialData }: { initialData: any }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("General");
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/categories?all=true")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) setCategories(data.data);
+      })
+      .catch(err => console.error("Error fetching categories:", err));
+  }, []);
   
   // Rich text states
   const [descriptionContent, setDescriptionContent] = useState(initialData?.description || "");
@@ -113,7 +161,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
       name: initialData?.name || "",
       slug: initialData?.slug || "",
       sku: initialData?.sku || "",
-      category: initialData?.category || "",
+      category: typeof initialData?.category === 'object' ? initialData?.category?._id?.toString() || "" : (initialData?.category || ""),
       subCategory: initialData?.subCategory || "",
       tags: initialData?.tags?.join(", ") || "",
       status: initialData?.status || "active",
@@ -135,6 +183,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
       metaTitle: initialData?.metaTitle || "",
       metaKeywords: initialData?.metaKeywords || "",
       metaDescription: initialData?.metaDescription || "",
+      variants: initialData?.variants || [],
     }
   });
 
@@ -152,7 +201,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
     }
   }, [setValue, initialData]);
 
-  const onSubmit = async (data: ProductFormValues) => {
+  const handleSaveProduct = async (data: ProductFormValues, closeTab: boolean = true) => {
     setIsSubmitting(true);
     setError("");
     try {
@@ -161,7 +210,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
         price: data.price !== undefined ? data.price : data.mrp,
         thumbnail,
         thumbnailAlt,
-        tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
+        tags: data.tags ? data.tags.split(',').map((t: string) => t.trim()) : [],
         description: descriptionContent || data.description,
         ingredients: ingredientsContent,
         benefits: benefitsContent,
@@ -171,13 +220,18 @@ export default function EditProductClient({ initialData }: { initialData: any })
         gst: (data.taxType === "exclusive") ? data.gst : undefined,
         customShippingEnabled: data.customShippingEnabled || false,
         shippingCharges: data.customShippingEnabled ? data.shippingCharges || [] : [],
+        variants: data.variants || [],
       };
       
       const res = await updateProduct(initialData._id, payload);
       if (res.success) {
-        toast.success("Product updated successfully!");
-        router.push("/admin/products");
-        router.refresh();
+        if (closeTab) {
+          toast.success("Product updated successfully!");
+          router.push("/admin/products");
+          router.refresh();
+        } else {
+          toast.success("Progress auto-saved!");
+        }
       } else {
         setError(res.error || "Failed to update product");
         toast.error(res.error || "Failed to update product");
@@ -189,6 +243,8 @@ export default function EditProductClient({ initialData }: { initialData: any })
       setIsSubmitting(false);
     }
   };
+
+  const onSubmit = (data: ProductFormValues) => handleSaveProduct(data, true);
 
   const statusVal = watch("status");
   const inStockVal = watch("inStock");
@@ -316,6 +372,29 @@ export default function EditProductClient({ initialData }: { initialData: any })
                           </div>
                           {errors.slug && <p className="flex items-center gap-1 text-rose-500 text-xs mt-1.5 font-medium"><AlertCircle className="w-3 h-3"/> {errors.slug.message}</p>}
                         </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Category</label>
+                            <select
+                              {...register("category")}
+                              className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white"
+                            >
+                              <option value="">Select a Category</option>
+                              {categories.map((c: any) => (
+                                <option key={c._id} value={c._id}>{c.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Tags (comma separated)</label>
+                            <input
+                              {...register("tags")}
+                              placeholder="ayurveda, health, natural..."
+                              className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white"
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-8 pt-6 border-t border-slate-200 mt-8">
@@ -414,20 +493,40 @@ export default function EditProductClient({ initialData }: { initialData: any })
                           <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Search Engine Optimization</h4>
                           
                           <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Meta Title</label>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <label className="block text-sm font-medium text-slate-700">Meta Title</label>
+                              <span className={`text-xs font-semibold ${
+                                (watch("metaTitle")?.length || 0) > 58 ? "text-rose-500 font-bold" : "text-slate-400"
+                              }`}>
+                                {watch("metaTitle")?.length || 0}/58 chars
+                              </span>
+                            </div>
                             <input 
                               {...register("metaTitle")} 
+                              maxLength={58}
+                              placeholder="SEO meta title (max 58 characters)"
                               className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
                             />
+                            {errors.metaTitle && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.metaTitle.message}</p>}
                           </div>
                           
                           <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Meta Description</label>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <label className="block text-sm font-medium text-slate-700">Meta Description</label>
+                              <span className={`text-xs font-semibold ${
+                                (watch("metaDescription")?.length || 0) > 155 ? "text-rose-500 font-bold" : "text-slate-400"
+                              }`}>
+                                {watch("metaDescription")?.length || 0}/155 chars
+                              </span>
+                            </div>
                             <textarea 
                               {...register("metaDescription")} 
+                              maxLength={155}
                               rows={3}
+                              placeholder="SEO meta description (max 155 characters)"
                               className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-4 focus:bg-white resize-y" 
                             />
+                            {errors.metaDescription && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.metaDescription.message}</p>}
                           </div>
                           
                           <div>
@@ -651,6 +750,96 @@ export default function EditProductClient({ initialData }: { initialData: any })
                         </div>
                       </div>
 
+                      {/* Variants Section */}
+                      <div className="space-y-6 pt-6 border-t border-slate-200/60 mt-8">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-900 tracking-wider">Product Variants</h4>
+                            <p className="text-xs text-slate-500 mt-1">Add size/quantity variants with individual prices (e.g. 30 Tablets, 60 Capsules, 100ml, 50g)</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const existing = watch("variants") || [];
+                              setValue("variants", [...existing, { attribute: "Size", value: "", price: 0, inventory: 0, sku: "" }]);
+                            }}
+                            className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-indigo-100 transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add Variant
+                          </button>
+                        </div>
+                        
+                        {(watch("variants") || []).length === 0 && (
+                          <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                            <p className="text-slate-500 text-sm mb-2">No variants added</p>
+                            <p className="text-xs text-slate-400">Add size/quantity variants for products like &quot;30 Tablets&quot;, &quot;60 Capsules&quot;, &quot;100ml Juice&quot;, &quot;50g Cream&quot;</p>
+                          </div>
+                        )}
+
+                        <div className="space-y-3">
+                          {(watch("variants") || []).map((variant, index) => (
+                            <div key={index} className="grid grid-cols-2 md:grid-cols-5 gap-3 items-end bg-slate-50 p-4 rounded-xl border border-slate-200">
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Type</label>
+                                <input
+                                  {...register(`variants.${index}.attribute` as const)}
+                                  placeholder="e.g. Size"
+                                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Value</label>
+                                <input
+                                  {...register(`variants.${index}.value` as const)}
+                                  placeholder="e.g. 60 Tablets"
+                                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Price (₹)</label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  {...register(`variants.${index}.price` as const, { valueAsNumber: true })}
+                                  placeholder="0.00"
+                                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Stock</label>
+                                <input
+                                  type="number"
+                                  {...register(`variants.${index}.inventory` as const, { valueAsNumber: true })}
+                                  placeholder="0"
+                                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                                />
+                              </div>
+                              <div className="flex items-end gap-2">
+                                <div className="flex-1">
+                                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">SKU</label>
+                                  <input
+                                    {...register(`variants.${index}.sku` as const)}
+                                    placeholder="Variant SKU"
+                                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const current = [...(watch("variants") || [])];
+                                    current.splice(index, 1);
+                                    setValue("variants", current);
+                                  }}
+                                  className="p-2 text-slate-400 bg-white rounded-lg shadow-sm border border-slate-200 hover:text-rose-600 hover:border-rose-200 transition-colors mb-0.5"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
                       <div className="space-y-6 pt-6 border-t border-slate-200/60 mt-8">
                         <h4 className="text-sm font-bold text-slate-900 tracking-wider">Delivery & Shipping</h4>
                         <div className="space-y-4">
@@ -762,7 +951,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
                         <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-400 transition-all">
                           <JoditEditor
                             value={descriptionContent}
-                            config={{ readonly: false, placeholder: "Start typing the full description here...", minHeight: 400 }}
+                            config={joditConfig}
                             onBlur={newContent => setDescriptionContent(newContent)}
                           />
                         </div>
@@ -837,13 +1026,13 @@ export default function EditProductClient({ initialData }: { initialData: any })
                       const currentIndex = tabs.indexOf(activeTab);
                       if (currentIndex < tabs.length - 1) {
                         setActiveTab(tabs[currentIndex + 1]);
-                        handleSubmit(onSubmit)(); // Auto-save on next
+                        handleSubmit((data) => handleSaveProduct(data, false))(); // Auto-save on Next without closing edit tab
                       } else {
-                        handleSubmit(onSubmit)();
+                        handleSubmit((data) => handleSaveProduct(data, true))(); // Save & close edit tab on final step
                       }
                     }}
                     disabled={isSubmitting}
-                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl shadow-sm shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-70 transition-all"
+                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl shadow-sm shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-70 transition-all cursor-pointer"
                   >
                     {isSubmitting ? "Saving..." : (tabs.indexOf(activeTab) === tabs.length - 1 ? "Save All Changes" : "Next & Save")}
                   </button>

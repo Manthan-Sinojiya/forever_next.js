@@ -12,8 +12,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const product = await Product.findById(id);
     if (product) {
       return {
-        title: `${product.name} - Forever Healthcare`,
-        description: product.description || "Premium health and wellness product.",
+        title: product.metaTitle || `${product.name} - Forever Healthcare`,
+        description: product.metaDescription || product.shortDescription || product.description?.replace(/<[^>]+>/g, '')?.substring(0, 155) || "Premium health and wellness product.",
+        keywords: product.metaKeywords,
       };
     }
   } catch {
@@ -21,6 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
   return {
     title: "Product Details - Forever Healthcare",
+    description: "Premium healthcare products from Forever Healthcare India.",
   };
 }
 
@@ -33,12 +35,22 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     const doc = await Product.findById(id).populate("category");
     if (doc) {
       const rawProduct = JSON.parse(JSON.stringify(doc));
+      const sizes = rawProduct.variants 
+        ? rawProduct.variants.filter((v: any) => v.attribute && v.attribute.toLowerCase() === "size").map((v: any) => ({
+            name: v.value,
+            price: v.price || rawProduct.price,
+            originalPrice: rawProduct.mrp || undefined
+          }))
+        : [];
+      
       product = {
         ...rawProduct,
         category: rawProduct.category?.name || rawProduct.category || "General",
-        imageUrl: rawProduct.images && rawProduct.images.length > 0 ? rawProduct.images[0].url : "/products/missing-image-test.png",
+        // Prioritize thumbnail, then first gallery image, then fallback
+        imageUrl: rawProduct.thumbnail || (rawProduct.images && rawProduct.images.length > 0 ? rawProduct.images[0].url : "/logo/logo.png"),
         rating: rawProduct.rating || 5,
-        originalPrice: rawProduct.originalPrice || rawProduct.mrp || Math.round(rawProduct.price * 1.35)
+        originalPrice: rawProduct.mrp || Math.round(rawProduct.price * 1.35),
+        sizes: sizes.length > 0 ? sizes : undefined
       };
     }
   } catch (err) {

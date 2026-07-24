@@ -102,7 +102,20 @@ export default function NewBlogPage() {
                   <div className="border border-slate-300 rounded-md overflow-hidden">
                     <JoditEditor
                       value={contentContent}
-                      config={{ readonly: false, placeholder: "Start typing..." }}
+                      config={{
+                        readonly: false,
+                        placeholder: "Start typing...",
+                        uploader: {
+                          insertImageAsBase64URI: true,
+                        } as any,
+                        buttons: [
+                          'bold', 'italic', 'underline', 'strikethrough', '|',
+                          'font', 'fontsize', 'brush', 'paragraph', '|',
+                          'image', 'video', 'file', 'table', 'link', '|',
+                          'align', 'undo', 'redo', '|',
+                          'fullsize'
+                        ]
+                      }}
                       onBlur={newContent => setContentContent(newContent)}
                     />
                   </div>

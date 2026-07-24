@@ -12,14 +12,25 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, data: [] });
     }
 
-    const suggestions = await Product.find({
+    const rawSuggestions = await Product.find({
+      status: "active",
       $or: [
         { name: { $regex: query, $options: "i" } },
-        { category: { $regex: query, $options: "i" } },
+        { tags: { $regex: query, $options: "i" } },
       ],
     })
-      .select("name price category imageUrl")
-      .limit(6); // Limit suggestions to a maximum of 6 products
+      .select("name price category thumbnail images")
+      .populate("category", "name")
+      .limit(6)
+      .lean();
+
+    const suggestions = rawSuggestions.map((prod: any) => ({
+      _id: prod._id,
+      name: prod.name,
+      price: prod.price,
+      category: prod.category?.name || "General",
+      imageUrl: prod.thumbnail || (prod.images && prod.images.length > 0 ? prod.images[0].url : "/logo/logo.png")
+    }));
 
     return NextResponse.json({ success: true, data: suggestions }, { status: 200 });
   } catch (error) {

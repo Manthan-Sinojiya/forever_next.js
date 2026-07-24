@@ -91,7 +91,7 @@ export default function ProductsGridClient({
 
   // Unique categories list dynamically extracted from products
   const categories = useMemo(() => {
-    const list = new Set(initialProducts.map((p) => p.category));
+    const list = new Set(initialProducts.map((p) => p.category || "Uncategorized"));
     return ["All", ...Array.from(list)];
   }, [initialProducts]);
 
@@ -113,13 +113,13 @@ export default function ProductsGridClient({
           const s = searchVal.toLowerCase();
           const nameMatch = product.name.toLowerCase().includes(s);
           const descMatch = (product.description || "").toLowerCase().includes(s);
-          const catMatch = product.category.toLowerCase().includes(s);
+          const catMatch = (product.category || "").toLowerCase().includes(s);
           if (!nameMatch && !descMatch && !catMatch) return false;
         }
 
         // Category filter
         if (selectedCategory !== "All") {
-          if (product.category.toLowerCase() !== selectedCategory.toLowerCase()) return false;
+          if ((product.category || "").toLowerCase() !== (selectedCategory || "").toLowerCase()) return false;
         }
 
         // Price filter
@@ -252,7 +252,7 @@ export default function ProductsGridClient({
               </label>
               <div className="space-y-1 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
                 {categories.map((cat) => {
-                  const isActive = selectedCategory.toLowerCase() === cat.toLowerCase();
+                  const isActive = (selectedCategory || "").toLowerCase() === (cat || "").toLowerCase();
                   return (
                     <button
                       key={cat}
@@ -325,7 +325,7 @@ export default function ProductsGridClient({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-slate-50 border border-transparent rounded-xl px-3 py-2 text-xs font-semibold text-slate-755 text-slate-750 text-slate-700 outline-none focus:bg-white focus:border-emerald-600/30 transition-all cursor-pointer"
+                className="bg-slate-50 border border-transparent rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:bg-white focus:border-emerald-600/30 transition-all cursor-pointer"
               >
                 <option value="default">Default Sort</option>
                 <option value="price-asc">Price: Low to High</option>
@@ -335,6 +335,43 @@ export default function ProductsGridClient({
               </select>
             </div>
           </div>
+
+          {/* Active Filter Chips */}
+          {(searchVal.trim() || selectedCategory !== "All" || maxPriceFilter < maxProductPrice) && (
+            <div className="flex flex-wrap items-center gap-2 mb-6 bg-emerald-50/60 p-3 rounded-2xl border border-emerald-100">
+              <span className="text-xs font-bold text-emerald-800 mr-1">Active Filters:</span>
+              {searchVal.trim() && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-white text-emerald-700 rounded-full text-xs font-bold shadow-xs border border-emerald-200">
+                  Search: &ldquo;{searchVal}&rdquo;
+                  <button onClick={() => setSearchVal("")} className="hover:text-emerald-900 cursor-pointer">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {selectedCategory !== "All" && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-white text-emerald-700 rounded-full text-xs font-bold shadow-xs border border-emerald-200">
+                  Category: {selectedCategory}
+                  <button onClick={() => setSelectedCategory("All")} className="hover:text-emerald-900 cursor-pointer">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {maxPriceFilter < maxProductPrice && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-white text-emerald-700 rounded-full text-xs font-bold shadow-xs border border-emerald-200">
+                  Under ₹{maxPriceFilter}
+                  <button onClick={() => setMaxPriceFilter(maxProductPrice)} className="hover:text-emerald-900 cursor-pointer">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              <button
+                onClick={handleResetFilters}
+                className="text-xs text-emerald-700 hover:text-emerald-900 font-extrabold underline underline-offset-2 ml-auto cursor-pointer"
+              >
+                Clear All
+              </button>
+            </div>
+          )}
 
           {/* Grid list */}
           {filteredProducts.length === 0 ? (
@@ -442,7 +479,7 @@ export default function ProductsGridClient({
                 </label>
                 <div className="space-y-1 overflow-y-auto pr-1 flex-1">
                   {categories.map((cat) => {
-                    const isActive = selectedCategory.toLowerCase() === cat.toLowerCase();
+                    const isActive = (selectedCategory || "").toLowerCase() === (cat || "").toLowerCase();
                     return (
                       <button
                         key={cat}

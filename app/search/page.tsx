@@ -24,8 +24,17 @@ export default async function SearchPage({
   await dbConnect();
   
   // Fetch all products to allow full sidebar categories, pricing sliders, and custom live search refinement
-  const rawProducts = await Product.find({}).lean();
-  const products = JSON.parse(JSON.stringify(rawProducts));
+  const rawProducts = await Product.find({ status: "active" }).populate("category").lean();
+  const products = rawProducts.map((p: any) => {
+    return {
+      ...p,
+      _id: p._id.toString(),
+      category: p.category && typeof p.category === 'object' && p.category.name 
+        ? p.category.name 
+        : (typeof p.category === 'string' && !/^[0-9a-fA-F]{24}$/.test(p.category) ? p.category : "General"),
+      imageUrl: p.thumbnail || (p.images && p.images.length > 0 ? p.images[0].url : "/logo/logo.png")
+    };
+  });
 
   return (
     <>

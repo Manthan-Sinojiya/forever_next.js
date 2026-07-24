@@ -37,10 +37,38 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
   const currentStatusStyle = statusColors[status.toLowerCase()] || statusColors["pending"];
   const StatusIcon = currentStatusStyle.icon;
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="pb-10">
+      {/* Printable Invoice CSS */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          .printable-invoice-container, .printable-invoice-container * {
+            visibility: visible !important;
+          }
+          .printable-invoice-container {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            padding: 20px !important;
+            background: white !important;
+            color: black !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 no-print">
         <div className="flex flex-col gap-1">
           <button 
             type="button" 
@@ -62,7 +90,11 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
           <p className="text-slate-500">Placed on {new Date(initialData.createdAt).toLocaleString()}</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
+          <button 
+            type="button"
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
+          >
             <Printer className="w-4 h-4" /> 
             Print Invoice
           </button>
@@ -80,6 +112,26 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
           </button>
         </div>
       </div>
+
+      <div className="printable-invoice-container">
+        {/* Print Only Header */}
+        <div className="hidden print:block mb-8 border-b border-slate-200 pb-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl font-bold text-emerald-800">FOREVER HEALTHCARE</h1>
+              <p className="text-xs text-slate-500 mt-1">Export Quality Ayurvedic & Medical Supplies</p>
+              <p className="text-xs text-slate-500">Support: support@foreverhealthcare.com | +91 98765 43210</p>
+            </div>
+            <div className="text-right">
+              <h2 className="text-xl font-bold text-slate-800">OFFICIAL INVOICE</h2>
+              <p className="text-sm font-semibold text-slate-700 mt-1">
+                Order #{initialData.orderNumber || initialData._id.substring(initialData._id.length - 8).toUpperCase()}
+              </p>
+              <p className="text-xs text-slate-500">Date: {new Date(initialData.createdAt).toLocaleDateString()}</p>
+              <p className="text-xs font-bold text-emerald-700 uppercase mt-1">Payment: {paymentStatus}</p>
+            </div>
+          </div>
+        </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Main Details */}
@@ -286,6 +338,7 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
             </div>
           </motion.div>
         </div>
+      </div>
       </div>
     </div>
   );

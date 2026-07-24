@@ -16,8 +16,8 @@ export default function ProductsClient({ initialData, totalPages, initialPage, i
       render: (row: any) => (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0">
-            {row.images && row.images.length > 0 ? (
-              <img src={row.images[0].url} alt={row.name} className="w-full h-full object-cover" />
+            {row.thumbnail || row.imageUrl || (row.images && row.images.length > 0) ? (
+              <img src={row.thumbnail || row.imageUrl || row.images[0].url} alt={row.name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No img</div>
             )}

@@ -5,7 +5,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   const search = params?.search || "";
   const page = parseInt(params?.page || "1", 10);
-  const limit = 10;
+  const limit = 1000;
 
   const { data, totalPages, success } = await getProducts(search, page, limit);
 

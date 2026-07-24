@@ -52,13 +52,23 @@ function CartPageContent() {
   // Manage checkout view state based on URL param
   useEffect(() => {
     if (checkoutParam) {
-      setIsCheckingOut(true);
+      if (!session?.user?.email && !localStorage.getItem("userEmail")) {
+        addToast("Please login or signup to continue", "info");
+        router.push("/login?callbackUrl=" + encodeURIComponent("/cart?checkout=true"));
+      } else {
+        setIsCheckingOut(true);
+      }
     } else {
       setIsCheckingOut(false);
     }
-  }, [checkoutParam]);
+  }, [checkoutParam, session?.user?.email, router, addToast]);
 
   const handleProceedToCheckout = () => {
+    if (!session?.user?.email && !localStorage.getItem("userEmail")) {
+      addToast("Please login or signup to continue", "info");
+      router.push("/login?callbackUrl=" + encodeURIComponent("/cart?checkout=true"));
+      return;
+    }
     router.push("/cart?checkout=true");
   };
 
@@ -392,7 +402,8 @@ function CartPageContent() {
                             </span>
                             <button
                               onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white hover:shadow-sm transition-all text-muted"
+                              disabled={item.quantity >= 3}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white hover:shadow-sm transition-all text-muted disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <Plus className="w-3.5 h-3.5" />
                             </button>
@@ -428,6 +439,7 @@ function CartPageContent() {
                               type="text"
                               value={fullName}
                               onChange={(e) => setFullName(e.target.value)}
+                              placeholder="Full Name"
                               className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium"
                               required
                             />
@@ -438,6 +450,7 @@ function CartPageContent() {
                               type="text"
                               value={phone}
                               onChange={(e) => setPhone(e.target.value)}
+                              placeholder="Phone Number"
                               className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium"
                               required
                             />
@@ -458,6 +471,77 @@ function CartPageContent() {
 
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div>
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Country</label>
+                            <input
+                              type="text"
+                              value="India"
+                              readOnly
+                              className="w-full px-4 py-3 rounded-xl bg-slate-100 border border-transparent text-slate-500 font-medium outline-none text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">State (India)</label>
+                            <select
+                              value={state}
+                              onChange={(e) => setState(e.target.value)}
+                              className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium"
+                              required
+                            >
+                              <option value="">Select State</option>
+                              <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                              <option value="Andhra Pradesh">Andhra Pradesh</option>
+                              <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                              <option value="Assam">Assam</option>
+                              <option value="Bihar">Bihar</option>
+                              <option value="Chandigarh">Chandigarh</option>
+                              <option value="Chhattisgarh">Chhattisgarh</option>
+                              <option value="Dadra and Nagar Haveli">Dadra and Nagar Haveli</option>
+                              <option value="Daman and Diu">Daman and Diu</option>
+                              <option value="Delhi">Delhi</option>
+                              <option value="Goa">Goa</option>
+                              <option value="Gujarat">Gujarat</option>
+                              <option value="Haryana">Haryana</option>
+                              <option value="Himachal Pradesh">Himachal Pradesh</option>
+                              <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                              <option value="Jharkhand">Jharkhand</option>
+                              <option value="Karnataka">Karnataka</option>
+                              <option value="Kerala">Kerala</option>
+                              <option value="Ladakh">Ladakh</option>
+                              <option value="Lakshadweep">Lakshadweep</option>
+                              <option value="Madhya Pradesh">Madhya Pradesh</option>
+                              <option value="Maharashtra">Maharashtra</option>
+                              <option value="Manipur">Manipur</option>
+                              <option value="Meghalaya">Meghalaya</option>
+                              <option value="Mizoram">Mizoram</option>
+                              <option value="Nagaland">Nagaland</option>
+                              <option value="Odisha">Odisha</option>
+                              <option value="Puducherry">Puducherry</option>
+                              <option value="Punjab">Punjab</option>
+                              <option value="Rajasthan">Rajasthan</option>
+                              <option value="Sikkim">Sikkim</option>
+                              <option value="Tamil Nadu">Tamil Nadu</option>
+                              <option value="Telangana">Telangana</option>
+                              <option value="Tripura">Tripura</option>
+                              <option value="Uttar Pradesh">Uttar Pradesh</option>
+                              <option value="Uttarakhand">Uttarakhand</option>
+                              <option value="West Bengal">West Bengal</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">City</label>
+                            <input
+                              type="text"
+                              value={city}
+                              onChange={(e) => setCity(e.target.value)}
+                              placeholder="e.g. Mumbai"
+                              className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium"
+                              required
+                            />
+                          </div>
+
+                          <div>
                             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Pincode / Zip</label>
                             <input
                               type="text"
@@ -465,36 +549,6 @@ function CartPageContent() {
                               onChange={handlePincodeChange}
                               maxLength={6}
                               placeholder="e.g. 110001"
-                              className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Country</label>
-                            <input
-                              type="text"
-                              value="India"
-                              disabled
-                              className="w-full px-4 py-3 rounded-xl bg-slate-100 border border-transparent text-slate-500 font-medium outline-none cursor-not-allowed"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">City</label>
-                            <input
-                              type="text"
-                              value={city}
-                              onChange={(e) => setCity(e.target.value)}
-                              className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">State (India)</label>
-                            <input
-                              type="text"
-                              value={state}
-                              onChange={(e) => setState(e.target.value)}
-                              placeholder="e.g. Maharashtra"
                               className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium"
                               required
                             />

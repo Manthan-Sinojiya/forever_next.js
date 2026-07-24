@@ -133,10 +133,10 @@ export default function FeaturedProducts({ title = "Best Selling Products", limi
         if (json.success && json.data && json.data.length > 0) {
           let parsed = json.data.map((p: any) => ({
             ...p,
-            originalPrice: p.originalPrice || getOriginalPrice(p.price, p._id),
-            imageUrl: p.images && p.images.length > 0 ? p.images[0].url : "/products/missing-image-test.png",
+            originalPrice: p.mrp || p.originalPrice || getOriginalPrice(p.price || p.mrp, p._id),
+            imageUrl: p.thumbnail || (p.images && p.images.length > 0 ? p.images[0].url : "/logo/logo.png"),
             rating: p.rating || 5,
-            category: p.category?.name || p.category || "General"
+            category: typeof p.category === 'object' ? (p.category?.name || "General") : (p.category || "General")
           }));
           if (limit && parsed.length > limit) {
             parsed = parsed.slice(0, limit);
@@ -154,7 +154,7 @@ export default function FeaturedProducts({ title = "Best Selling Products", limi
     setLoading(true);
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [limit]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -276,9 +276,9 @@ export default function FeaturedProducts({ title = "Best Selling Products", limi
 
         {/* Scroll Container */}
         {loading ? (
-          <div className="flex overflow-x-auto gap-4 scrollbar-hide snap-x snap-mandatory pb-4">
+          <div className="flex overflow-x-auto gap-6 scrollbar-hide snap-x snap-mandatory pb-4">
             {[1, 2, 3, 4, 5].map((s) => (
-              <div key={s} className="snap-start shrink-0 w-[200px] sm:w-[240px] md:w-[260px] lg:w-[270px]">
+              <div key={s} className="snap-start shrink-0 w-[240px] sm:w-[270px] md:w-[280px] lg:w-[286px]">
                 <SkeletonCard />
               </div>
             ))}
@@ -299,7 +299,7 @@ export default function FeaturedProducts({ title = "Best Selling Products", limi
               return (
                 <div
                   key={product._id}
-                  className="snap-start shrink-0 w-[200px] sm:w-[240px] md:w-[260px] lg:w-[270px]"
+                  className="snap-start shrink-0 w-[240px] sm:w-[270px] md:w-[280px] lg:w-[286px]"
                 >
                   <ProductCard
                     product={fullProduct}

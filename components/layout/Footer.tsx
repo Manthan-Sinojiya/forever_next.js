@@ -151,13 +151,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 py-16">
           {/* Brand - takes 2 cols on large screens */}
           <div className="lg:col-span-2 space-y-5">
-            <Link href="/" className="flex items-center" aria-label="Forever Healthcare Home">
+            <Link href="/" className="inline-block bg-white/95 p-3 rounded-2xl shadow-sm mb-2 hover:bg-white transition-colors" aria-label="Forever Healthcare Home">
               <Image
-                src={settings.logo || "/logo/logo.png"}
+                src={(settings?.logo && settings.logo.trim() !== "") ? settings.logo : "/logo/logo.png"}
                 alt={settings.storeName || "Forever Healthcare"}
                 width={180}
                 height={50}
-                className="h-10 md:h-12 w-auto object-contain brightness-0 invert"
+                className="h-9 md:h-10 w-auto object-contain"
                 priority
               />
             </Link>

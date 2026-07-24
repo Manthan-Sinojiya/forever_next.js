@@ -58,11 +58,17 @@ export const useCartStore = create<CartState>()(
       })),
       addToCart: (product) => set((state) => {
         const existingItem = state.cart.find(item => item._id === product._id);
+        if (existingItem && existingItem.quantity >= 3) {
+          setTimeout(() => {
+            get().addToast(`Maximum limit of 3 per item reached for "${product.name}".`, 'info');
+          }, 50);
+          return { isCartOpen: true };
+        }
         const newCart = existingItem
           ? state.cart.map(item =>
-              item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
+              item._id === product._id ? { ...item, quantity: Math.min(item.quantity + 1, 3) } : item
             )
-          : [...state.cart, { ...product, quantity: product.quantity ?? 1 }];
+          : [...state.cart, { ...product, quantity: Math.min(product.quantity ?? 1, 3) }];
 
         setTimeout(() => {
           get().addToast(`"${product.name}" added to cart!`, 'success');
@@ -76,11 +82,18 @@ export const useCartStore = create<CartState>()(
       removeFromCart: (productId) => set((state) => ({
         cart: state.cart.filter(item => item._id !== productId)
       })),
-      updateQuantity: (productId, quantity) => set((state) => ({
-        cart: state.cart.map(item =>
-          item._id === productId ? { ...item, quantity: Math.max(1, quantity) } : item
-        )
-      })),
+      updateQuantity: (productId, quantity) => set((state) => {
+        if (quantity <= 0) {
+          return { cart: state.cart.filter(item => item._id !== productId) };
+        }
+        return {
+          cart: state.cart
+            .filter(item => item.quantity > 0)
+            .map(item =>
+              item._id === productId ? { ...item, quantity: Math.min(quantity, 3) } : item
+            )
+        };
+      }),
       clearCart: () => set({ cart: [] }),
       getTotalItems: () => get().cart.reduce((total, item) => total + item.quantity, 0),
       getTotalPrice: () => get().cart.reduce((total, item) => total + (item.price * item.quantity), 0),

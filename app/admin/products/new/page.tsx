@@ -13,6 +13,28 @@ import toast from "react-hot-toast";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
+const joditConfig = {
+  readonly: false,
+  placeholder: "Start typing...",
+  minHeight: 300,
+  hidePoweredByJodit: true,
+  uploader: {
+    insertImageAsBase64URI: true,
+    insertVideoAsBase64URI: true,
+  },
+  buttons: [
+    'source', '|',
+    'bold', 'italic', 'underline', 'strikethrough', '|',
+    'superscript', 'subscript', '|',
+    'ul', 'ol', '|',
+    'outdent', 'indent', '|',
+    'font', 'fontsize', 'brush', 'paragraph', '|',
+    'image', 'video', 'file', 'table', 'link', '|',
+    'align', 'undo', 'redo', '|',
+    'hr', 'eraser', 'fullsize', 'print', 'about'
+  ],
+};
+
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
   slug: z.string().min(1, "Slug is required"),
@@ -36,6 +58,17 @@ const productSchema = z.object({
     })
   ).optional(),
   
+  // Variants
+  variants: z.array(
+    z.object({
+      attribute: z.string().min(1, "Attribute is required"),
+      value: z.string().min(1, "Value is required"),
+      price: z.number().min(0, "Price must be non-negative"),
+      inventory: z.number().min(0, "Inventory must be non-negative"),
+      sku: z.string().optional()
+    })
+  ).optional(),
+  
   // Physical
   weight: z.string().optional(),
   
@@ -55,9 +88,9 @@ const productSchema = z.object({
   isNewArrival: z.boolean().optional(),
   
   // SEO
-  metaTitle: z.string().optional(),
+  metaTitle: z.string().max(58, "Title should be max 58 characters").optional(),
   metaKeywords: z.string().optional(),
-  metaDescription: z.string().optional(),
+  metaDescription: z.string().max(155, "Description should be max 155 characters").optional(),
   thumbnailAlt: z.string().optional(),
   todayDeal: z.boolean().optional(),
 });
@@ -67,16 +100,30 @@ type ProductFormValues = z.infer<typeof productSchema>;
 const tabs = [
   "General",
   "Media",
-  "Pricing, Inventory & Delivery",
   "Content & Details",
-  "Healthcare Specific"
+  "Healthcare Specific",
+  "Pricing, Inventory & Delivery"
 ];
+
+
 
 export default function NewProductPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("General");
+  const [categories, setCategories] = useState<any[]>([]);
+  
+  useEffect(() => {
+    fetch("/api/categories?all=true")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setCategories(data.data);
+        }
+      })
+      .catch(err => console.error("Error fetching categories:", err));
+  }, []);
   
   // Rich text states
   const [descriptionContent, setDescriptionContent] = useState("");
@@ -152,6 +199,7 @@ export default function NewProductPage() {
         gst: (data.taxType === "exclusive") ? data.gst : undefined,
         customShippingEnabled: data.customShippingEnabled || false,
         shippingCharges: data.customShippingEnabled ? data.shippingCharges || [] : [],
+        variants: data.variants || [],
       };
       
       const res = await createProduct(payload);
@@ -240,6 +288,18 @@ export default function NewProductPage() {
                         />
                         {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
                       </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                        <select 
+                          {...register("category")} 
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow bg-white"
+                        >
+                          <option value="">Select a Category</option>
+                          {categories.map((c: any) => (
+                            <option key={c._id} value={c._id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
 
@@ -318,20 +378,26 @@ export default function NewProductPage() {
 
                     <div className="space-y-4 mt-6 pt-6 border-t border-slate-200">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Meta Title</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Meta Title <span className="text-xs text-slate-400 font-normal ml-1">({watch("metaTitle")?.length || 0}/58 chars max)</span>
+                        </label>
                         <input 
                           {...register("metaTitle")} 
                           className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
                         />
+                        {errors.metaTitle && <p className="text-red-500 text-xs mt-1">{errors.metaTitle.message}</p>}
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Meta Description</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Meta Description <span className="text-xs text-slate-400 font-normal ml-1">({watch("metaDescription")?.length || 0}/155 chars max)</span>
+                        </label>
                         <textarea 
                           {...register("metaDescription")} 
                           rows={3}
                           className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
                         />
+                        {errors.metaDescription && <p className="text-red-500 text-xs mt-1">{errors.metaDescription.message}</p>}
                       </div>
                       
                       <div>
@@ -525,6 +591,83 @@ export default function NewProductPage() {
                     </div>
                   </div>
 
+                  <h3 className="text-sm font-semibold text-slate-800 mt-8 mb-4 border-t border-slate-200 pt-6">Variants (e.g. Sizes)</h3>
+                  <div className="space-y-4">
+                    <div className="border border-slate-200 rounded-lg p-4 space-y-4 bg-white">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-sm font-semibold text-slate-700">Product Variants</h4>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const existing = watch("variants") || [];
+                            setValue("variants", [...existing, { attribute: "Size", value: "", price: 0, inventory: 0, sku: "" }]);
+                          }}
+                          className="text-xs font-semibold text-emerald-600 flex items-center gap-1 hover:text-emerald-700"
+                        >
+                          <Plus className="w-3 h-3" /> Add Variant
+                        </button>
+                      </div>
+                      {(watch("variants") || []).map((variant, index) => (
+                        <div key={index} className="grid grid-cols-5 gap-4 items-end bg-slate-50 p-3 rounded-md border border-slate-200">
+                          <div>
+                            <label className="block text-xs font-medium text-slate-500 mb-1">Variant Type</label>
+                            <input 
+                              {...register(`variants.${index}.attribute` as const)}
+                              placeholder="e.g. Size"
+                              className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-500 mb-1">Value</label>
+                            <input 
+                              {...register(`variants.${index}.value` as const)}
+                              placeholder="e.g. 60 Tablets"
+                              className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-500 mb-1">Price (₹)</label>
+                            <input 
+                              type="number"
+                              step="0.01"
+                              {...register(`variants.${index}.price` as const, { valueAsNumber: true })}
+                              className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-500 mb-1">Inventory</label>
+                            <input 
+                              type="number"
+                              {...register(`variants.${index}.inventory` as const, { valueAsNumber: true })}
+                              className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="flex-1">
+                              <label className="block text-xs font-medium text-slate-500 mb-1">SKU</label>
+                              <input 
+                                {...register(`variants.${index}.sku` as const)}
+                                placeholder="Variant SKU"
+                                className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const current = watch("variants") || [];
+                                current.splice(index, 1);
+                                setValue("variants", current);
+                              }}
+                              className="text-red-500 bg-white p-2 rounded shadow-sm border border-red-100 hover:bg-red-50 mt-5"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <h3 className="text-sm font-semibold text-slate-800 mt-8 mb-4 border-t border-slate-200 pt-6">Delivery & Shipping</h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-md border border-slate-200">
@@ -622,7 +765,7 @@ export default function NewProductPage() {
                     <div className="border border-slate-300 rounded-md overflow-hidden">
                       <JoditEditor
                         value={descriptionContent}
-                        config={{ readonly: false, placeholder: "Start typing...", minHeight: 400 }}
+                        config={joditConfig}
                         onBlur={newContent => setDescriptionContent(newContent)}
                       />
                     </div>
@@ -640,7 +783,7 @@ export default function NewProductPage() {
                     <div className="border border-slate-300 rounded-md overflow-hidden">
                       <JoditEditor
                         value={ingredientsContent}
-                        config={{ readonly: false, placeholder: "List of ingredients...", minHeight: 400 }}
+                        config={joditConfig}
                         onBlur={newContent => setIngredientsContent(newContent)}
                       />
                     </div>
@@ -650,7 +793,7 @@ export default function NewProductPage() {
                     <div className="border border-slate-300 rounded-md overflow-hidden">
                       <JoditEditor
                         value={benefitsContent}
-                        config={{ readonly: false, placeholder: "Health benefits...", minHeight: 400 }}
+                        config={joditConfig}
                         onBlur={newContent => setBenefitsContent(newContent)}
                       />
                     </div>
@@ -660,7 +803,7 @@ export default function NewProductPage() {
                     <div className="border border-slate-300 rounded-md overflow-hidden">
                       <JoditEditor
                         value={howToUseContent}
-                        config={{ readonly: false, placeholder: "Usage instructions...", minHeight: 400 }}
+                        config={joditConfig}
                         onBlur={newContent => setHowToUseContent(newContent)}
                       />
                     </div>

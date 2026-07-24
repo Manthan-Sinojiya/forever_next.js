@@ -13,12 +13,14 @@ export const metadata: Metadata = {
 
 export default async function ProductsPage() {
   await dbConnect();
-  const rawProducts = await Product.find({}).populate("category").lean();
+  const rawProducts = await Product.find({ status: "active" }).populate("category").lean();
   
   // Format the products so the category is just a string (the category name), as expected by ProductCard
   const formattedProducts = rawProducts.map((p: any) => ({
     ...p,
     category: p.category ? p.category.name : undefined,
+    // Prioritize thumbnail, then first gallery image, then fallback
+    imageUrl: p.thumbnail || (p.images && p.images.length > 0 ? p.images[0].url : "/logo/logo.png"),
   }));
   
   // Serialize Mongo documents so they are safe to pass to client component

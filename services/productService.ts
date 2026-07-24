@@ -13,22 +13,12 @@ interface GetProductsOptions {
 export async function getProducts(options: GetProductsOptions = {}) {
   await dbConnect();
   
-  const query: any = {};
+  const query: any = options.fetchAll ? {} : { status: "active" };
   if (options.todayDeal !== undefined) query.todayDeal = options.todayDeal;
   if (options.featured !== undefined) {
     query.$or = [{ isFeatured: options.featured }, { isBestSeller: options.featured }];
   }
   if (options.category !== undefined) query.category = options.category;
-  
-  if (options.fetchAll) {
-    return await Product.find(query).populate("category").sort({ createdAt: -1 });
-  }
-  
-  if (Object.keys(query).length === 0) {
-    return await Product.find({ $or: [{ isFeatured: true }, { isBestSeller: true }] })
-      .populate("category")
-      .limit(options.limit || 6);
-  }
   
   let result = Product.find(query).populate("category").sort({ createdAt: -1 });
   if (options.limit) {

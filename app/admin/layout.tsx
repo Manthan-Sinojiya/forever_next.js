@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, 
@@ -76,11 +77,103 @@ const SIDEBAR_GROUPS = [
   }
 ];
 
+const ROUTE_LABELS: Record<string, string> = {
+  admin: "Admin",
+  products: "Products",
+  categories: "Categories",
+  orders: "Orders",
+  coupons: "Coupons",
+  customers: "Customers",
+  reviews: "Reviews",
+  contact: "Contact Messages",
+  newsletter: "Newsletter",
+  media: "Media Library",
+  banners: "Banners",
+  blog: "Blog Articles",
+  cms: "CMS Pages",
+  custompages: "Custom Pages",
+  faqs: "FAQs",
+  testimonials: "Testimonials",
+  navigation: "Navigation",
+  footer: "Footer",
+  "activity-logs": "Activity Logs",
+  settings: "Settings",
+  "office-hours": "Office Hours",
+};
+
+const ENTITY_ACTION_LABELS: Record<string, { edit: string; new: string }> = {
+  products: { edit: "Edit Product", new: "New Product" },
+  categories: { edit: "Edit Category", new: "New Category" },
+  blog: { edit: "Edit Article", new: "New Article" },
+  custompages: { edit: "Edit Custom Page", new: "New Custom Page" },
+  navigation: { edit: "Edit Navigation", new: "New Item" },
+  banners: { edit: "Edit Banner", new: "New Banner" },
+  coupons: { edit: "Edit Coupon", new: "New Coupon" },
+  faqs: { edit: "Edit FAQ", new: "New FAQ" },
+  testimonials: { edit: "Edit Testimonial", new: "New Testimonial" },
+  orders: { edit: "Order Details", new: "New Order" },
+  customers: { edit: "Customer Details", new: "New Customer" },
+  contact: { edit: "Contact Details", new: "New Message" },
+};
+
+function getBreadcrumbs(pathname: string) {
+  const parts = pathname.split('/').filter(Boolean);
+  if (parts.length === 0 || (parts.length === 1 && parts[0] === 'admin')) {
+    return [
+      { label: "Admin", href: "/admin", isLast: false },
+      { label: "Dashboard", href: "/admin", isLast: true }
+    ];
+  }
+
+  const breadcrumbs: { label: string; href: string; isLast: boolean }[] = [];
+  let currentPath = "";
+
+  parts.forEach((part, index) => {
+    currentPath += `/${part}`;
+    const isLast = index === parts.length - 1;
+    const prevPart = index > 0 ? parts[index - 1] : "";
+
+    let label = "";
+
+    if (ENTITY_ACTION_LABELS[prevPart]) {
+      if (part.toLowerCase() === "new" || part.toLowerCase() === "create") {
+        label = ENTITY_ACTION_LABELS[prevPart].new;
+      } else {
+        label = ENTITY_ACTION_LABELS[prevPart].edit;
+      }
+    } else if (ROUTE_LABELS[part]) {
+      label = ROUTE_LABELS[part];
+    } else if (/^[0-9a-fA-F]{24}$/.test(part) || /^[0-9a-fA-F-]{12,}$/.test(part)) {
+      label = "Edit";
+    } else {
+      label = part.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    breadcrumbs.push({
+      label,
+      href: currentPath,
+      isLast
+    });
+  });
+
+  return breadcrumbs;
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
+    window.dispatchEvent(new Event("storage"));
+    await signOut({ redirect: false });
+    router.push("/");
+  };
 
   // Handle scroll effect for header
   useEffect(() => {
@@ -89,6 +182,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.admin-profile-dropdown')) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -222,7 +327,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <p className="text-sm font-medium text-slate-900 truncate">Admin User</p>
                 <p className="text-xs text-slate-500 truncate">admin@forever.com</p>
               </div>
-              <button className="text-slate-400 hover:text-red-600 transition-colors">
+              <button onClick={handleLogout} className="text-slate-400 hover:text-red-600 transition-colors">
                 <LogOut size={16} />
               </button>
             </div>
@@ -244,11 +349,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Left side */}
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-2 text-sm text-slate-500">
-              <Link href="/admin" className="hover:text-indigo-600 transition-colors">Admin</Link>
-              <span className="text-slate-300">/</span>
-              <span className="font-medium text-slate-900 capitalize">
-                {pathname.split('/').pop()?.replace(/-/g, ' ') || 'Dashboard'}
-              </span>
+              {getBreadcrumbs(pathname).map((crumb, idx) => (
+                <React.Fragment key={crumb.href + idx}>
+                  {idx > 0 && <span className="text-slate-300">/</span>}
+                  {crumb.isLast ? (
+                    <span className="font-medium text-slate-900">
+                      {crumb.label}
+                    </span>
+                  ) : (
+                    <Link 
+                      href={crumb.href} 
+                      className="hover:text-indigo-600 transition-colors"
+                    >
+                      {crumb.label}
+                    </Link>
+                  )}
+                </React.Fragment>
+              ))}
             </div>
           </div>
           
@@ -273,7 +390,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
             
             {/* User Dropdown */}
-            <div className="relative">
+            <div className="relative admin-profile-dropdown">
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-2.5 p-1 pr-3 rounded-full bg-white border border-slate-200 shadow-sm hover:border-indigo-200 transition-all"
@@ -299,13 +416,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       <p className="text-xs text-slate-500 mt-0.5">admin@forever.com</p>
                     </div>
                     <div className="p-2">
-                      <Link href="/admin/settings" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                      <Link href="/admin/settings" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors">
                         <Settings size={16} />
                         Account Settings
                       </Link>
                     </div>
                     <div className="p-2 border-t border-slate-100">
-                      <button className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+                      <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors">
                         <LogOut size={16} />
                         Logout
                       </button>

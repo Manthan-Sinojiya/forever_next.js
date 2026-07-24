@@ -3,6 +3,7 @@
 import { useState, useEffect, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCartStore } from "@/lib/store";
 import { useSession } from "next-auth/react";
 import { 
@@ -16,7 +17,9 @@ import {
   Award, 
   Calendar,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  Compass
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "@/components/products/ProductCard";
@@ -41,6 +44,8 @@ interface Product {
   benefits?: string;
   howToUse?: string;
   whoShouldUse?: string;
+  variants?: { attribute: string; value: string; price: number; inventory: number; sku?: string }[];
+  images?: { url: string; alt?: string }[];
 }
 
 interface Review {
@@ -149,13 +154,6 @@ function getCategoryDetails(category: string) {
   };
 }
 
-function getCategorySizes(category: string) {
-  const cat = (category || "").toLowerCase();
-  if (cat.includes("supplement")) return ["60 Tablets", "120 Tablets", "180 Tablets"];
-  if (cat.includes("equipment") || cat.includes("device")) return ["Standard Unit", "Family Pack Pro"];
-  if (cat.includes("care") || cat.includes("skin") || cat.includes("personal")) return ["100ml", "200ml", "500ml"];
-  return ["200g", "500ml", "60 Tablets"];
-}
 
 function getCategoryColorTheme(category: string) {
   const cat = (category || "").toLowerCase();
@@ -209,6 +207,7 @@ function getRichDescription(product: Product) {
 }
 
 export default function ProductDetailsClient({ product }: { product: Product }) {
+  const router = useRouter();
   const { data: session } = useSession();
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -220,10 +219,29 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
   const [selectedImage, setSelectedImage] = useState(product.imageUrl);
   const [activeTab, setActiveTab] = useState<"description" | "info" | "reviews">("description");
 
-  // Get sizes either from database (if present) or fallback from category
-  const sizes = product.sizes && product.sizes.length > 0 
-    ? product.sizes.map((s) => s.name)
-    : getCategorySizes(product.category);
+  // Product Redirection Menu State
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    async function fetchAllProductsForMenu() {
+      try {
+        const res = await fetch("/api/products?all=true");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setAllProducts(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to load products for redirection menu:", err);
+      }
+    }
+    fetchAllProductsForMenu();
+  }, []);
+
+  // Get sizes either from database variants (if present)
+  const sizes = product.variants && product.variants.length > 0 
+    ? [...new Set(product.variants.map((v) => v.value))]
+    : [];
   const [selectedSize, setSelectedSize] = useState(sizes[0] || "");
 
   // Related Products states
@@ -243,6 +261,7 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
   const cart = useCartStore((state) => state.cart);
   const addToCart = useCartStore((state) => state.addToCart);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
+  const setCartOpen = useCartStore((state) => state.setCartOpen);
 
   const fetchReviews = async () => {
     try {
@@ -367,9 +386,9 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
     ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
     : 0;
 
-  const gallery = product.imageGallery && product.imageGallery.length > 0 
-    ? [product.imageUrl, ...product.imageGallery] 
-    : [product.imageUrl];
+  const gallery = product.images && product.images.length > 0
+    ? product.images.map(img => img.url)
+    : [product.imageUrl || "/products/missing-image-test.png"];
   const catTheme = getCategoryColorTheme(product.category);
   const catDetails = getCategoryDetails(product.category);
   const sku = getProductSKU(product);
@@ -401,6 +420,68 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
   return (
     <main className="min-h-screen bg-white pt-8 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Product Redirection Menu Bar */}
+        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 mb-8 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100/70 text-emerald-700 flex items-center justify-center font-bold">
+              <Compass className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-black text-slate-800 uppercase tracking-wider block leading-none">Product Navigation</span>
+              <span className="text-[11px] text-slate-500 font-medium">Quick redirect to other store products</span>
+            </div>
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="bg-white border border-slate-300 hover:border-emerald-500 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+            >
+              <span>Redirect to Product...</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${menuOpen ? "rotate-180 text-emerald-600" : "text-slate-400"}`} />
+            </button>
+
+            <AnimatePresence>
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 w-72 max-h-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-40 overflow-hidden flex flex-col"
+                  >
+                    <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700">
+                      <span>Select Product to Open</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">{allProducts.length} Available</span>
+                    </div>
+                    <div className="overflow-y-auto p-2 space-y-1 scrollbar-thin">
+                      {allProducts.map((p) => (
+                        <button
+                          key={p._id}
+                          onClick={() => {
+                            setMenuOpen(false);
+                            router.push(`/products/${p._id}`);
+                          }}
+                          className={`w-full text-left p-2 rounded-xl text-xs flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                            p._id === product._id
+                              ? "bg-emerald-50 text-emerald-700 font-bold border border-emerald-100"
+                              : "text-slate-700 hover:bg-slate-50 font-medium"
+                          }`}
+                        >
+                          <span className="truncate">{p.name}</span>
+                          <span className="text-[10px] text-slate-400 shrink-0 font-semibold">₹{p.price}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
         
         {/* Product Details Card (Top Section) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 mb-16 items-start">
@@ -534,25 +615,26 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
                 </div>
               )}
 
-              {/* Interactive Size Selection */}
-              <div className="mb-6">
-                <p className="text-xs font-black text-slate-800 uppercase tracking-wider mb-3">Size:</p>
-                <div className="flex gap-2">
-                  {sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer ${
-                        selectedSize === size
-                          ? "border-primary bg-primary/5 text-primary scale-102 shadow-sm"
-                          : "border-slate-200 text-slate-650 hover:border-slate-400 hover:text-slate-800"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+              {sizes.length > 0 && (
+                <div className="mb-6">
+                  <p className="text-xs font-black text-slate-800 uppercase tracking-wider mb-3">Size:</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {sizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer ${
+                          selectedSize === size
+                            ? "border-primary bg-primary/5 text-primary scale-102 shadow-sm"
+                            : "border-slate-200 text-slate-650 hover:border-slate-400 hover:text-slate-800"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Quantity Stepper & Add to Cart Controls */}
               <div className="mb-8 pt-4">
@@ -586,15 +668,17 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
 
                     {/* CTA button */}
                     <button
-                      onClick={() => cartQty === 0 && handleAddToCart()}
-                      className={`flex-1 font-black py-3.5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 text-sm cursor-pointer border shadow-sm ${
-                        cartQty > 0
-                          ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100/60"
-                          : "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-600/10 active:scale-98"
-                      }`}
+                      onClick={() => {
+                        if (cartQty > 0) {
+                          setCartOpen(true);
+                        } else {
+                          handleAddToCart();
+                        }
+                      }}
+                      className="flex-1 font-black py-3.5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 text-sm cursor-pointer border shadow-sm bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-600/10 active:scale-98"
                     >
                       <ShoppingCart className="w-4 h-4" />
-                      {cartQty > 0 ? "Added to Cart" : "Add to Cart"}
+                      {cartQty > 0 ? "View Cart →" : "Add to Cart"}
                     </button>
                   </div>
                 ) : (
@@ -657,24 +741,24 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
                     </div>
 
                     {product.benefits && (
-                      <div className="bg-emerald-50/50 rounded-3xl p-6 border border-emerald-100 shadow-sm">
-                        <h4 className="font-heading font-black text-lg text-emerald-900 mb-3 flex items-center gap-2">
+                      <div className="bg-emerald-50/50 rounded-3xl p-6 md:p-8 border border-emerald-100 shadow-sm text-center">
+                        <h4 className="font-heading font-black text-xl text-emerald-900 mb-4 flex items-center justify-center gap-2">
                           <ShieldCheck className="w-5 h-5 text-emerald-600" /> Key Benefits
                         </h4>
                         <div 
-                          className="text-sm text-slate-700 leading-relaxed font-medium prose prose-sm prose-emerald max-w-none" 
+                          className="text-sm md:text-base text-slate-700 leading-relaxed font-medium prose prose-sm prose-emerald max-w-2xl mx-auto text-center" 
                           dangerouslySetInnerHTML={{ __html: product.benefits }} 
                         />
                       </div>
                     )}
 
                     {product.ingredients && (
-                      <div>
-                        <h4 className="font-heading font-black text-lg text-slate-800 mb-3 flex items-center gap-2">
+                      <div className="text-center">
+                        <h4 className="font-heading font-black text-xl text-slate-800 mb-4 flex items-center justify-center gap-2">
                           <Sparkles className="w-5 h-5 text-amber-500" /> Active Ingredients
                         </h4>
                         <div 
-                          className="text-sm text-slate-600 leading-relaxed font-medium bg-slate-50 p-5 rounded-2xl border border-slate-100 prose prose-sm prose-amber max-w-none" 
+                          className="text-sm md:text-base text-slate-600 leading-relaxed font-medium bg-slate-50 p-6 md:p-8 rounded-3xl border border-slate-100 prose prose-sm prose-amber max-w-2xl mx-auto text-center" 
                           dangerouslySetInnerHTML={{ __html: product.ingredients }} 
                         />
                       </div>
@@ -682,24 +766,24 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {product.howToUse && (
-                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 hover:border-slate-200 transition-colors">
-                          <h4 className="font-heading font-black text-base text-slate-800 mb-3 flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-500" /> How to Use
+                        <div className="bg-slate-50 rounded-3xl p-6 md:p-8 border border-slate-100 hover:border-slate-200 transition-colors text-center">
+                          <h4 className="font-heading font-black text-lg text-slate-800 mb-3 flex items-center justify-center gap-2">
+                            <Check className="w-5 h-5 text-emerald-500" /> How to Use
                           </h4>
                           <div 
-                            className="text-sm text-slate-600 font-medium prose prose-sm prose-slate max-w-none" 
+                            className="text-sm text-slate-600 font-medium prose prose-sm prose-slate max-w-none text-center" 
                             dangerouslySetInnerHTML={{ __html: product.howToUse }} 
                           />
                         </div>
                       )}
                       
                       {product.whoShouldUse && (
-                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 hover:border-slate-200 transition-colors">
-                          <h4 className="font-heading font-black text-base text-slate-800 mb-3 flex items-center gap-2">
-                            <Award className="w-4 h-4 text-blue-500" /> Who Should Use
+                        <div className="bg-slate-50 rounded-3xl p-6 md:p-8 border border-slate-100 hover:border-slate-200 transition-colors text-center">
+                          <h4 className="font-heading font-black text-lg text-slate-800 mb-3 flex items-center justify-center gap-2">
+                            <Award className="w-5 h-5 text-blue-500" /> Who Should Use
                           </h4>
                           <div 
-                            className="text-sm text-slate-600 font-medium prose prose-sm prose-slate max-w-none" 
+                            className="text-sm text-slate-600 font-medium prose prose-sm prose-slate max-w-none text-center" 
                             dangerouslySetInnerHTML={{ __html: product.whoShouldUse }} 
                           />
                         </div>

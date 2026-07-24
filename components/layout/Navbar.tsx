@@ -28,6 +28,7 @@ export default function Navbar() {
     () => false
   );
   const [isOpen, setIsOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<{ _id: string; name: string; category: string; price: number; imageUrl: string }[]>([]);
@@ -164,11 +165,19 @@ export default function Navbar() {
     localStorage.removeItem("userRole");
     localStorage.removeItem("userName");
     localStorage.removeItem("userEmail");
+    if (typeof window !== "undefined") {
+      sessionStorage.clear();
+    }
     setRole("user");
     setIsLoggedIn(false);
+    setUserDropdownOpen(false);
     window.dispatchEvent(new Event("storage"));
-    await signOut({ redirect: false });
-    router.push("/");
+    try {
+      await signOut({ callbackUrl: "/", redirect: true });
+    } catch (err) {
+      console.error("SignOut error:", err);
+      window.location.href = "/";
+    }
   };
 
   useEffect(() => {
@@ -177,6 +186,17 @@ export default function Navbar() {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.user-dropdown-container')) {
+        setUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -432,16 +452,16 @@ export default function Navbar() {
               </Link>
 
               {mounted && isLoggedIn ? (
-                <div className="relative group">
-                  <Link
-                    href="/profile"
+                <div className="relative user-dropdown-container">
+                  <button
+                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                     className="w-10 h-10 flex items-center justify-center rounded-xl text-foreground/60 hover:text-emerald-600 hover:bg-emerald-50 transition-all relative"
                     aria-label="User account"
                   >
                     <User className="w-[18px] h-[18px]" />
-                  </Link>
+                  </button>
                   {/* Dropdown menu */}
-                  <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className={`absolute right-0 mt-1 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden transition-all duration-200 z-50 ${userDropdownOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
                     <Link
                       href="/profile?tab=Profile"
                       className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
@@ -466,7 +486,7 @@ export default function Navbar() {
                       </Link>
                     )}
                     <button
-                      onClick={handleLogout}
+                      onClick={() => { setUserDropdownOpen(false); handleLogout(); }}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-50 hover:text-red-650 transition-colors border-t border-gray-100 text-left cursor-pointer bg-transparent border-none"
                     >
                       <LogOut className="w-4 h-4 text-red-400" />

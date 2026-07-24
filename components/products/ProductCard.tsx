@@ -80,6 +80,25 @@ function getHoverImageUrl(product: Product): string {
 }
 
 function renderCardPrice(product: Product) {
+  // Check for variant pricing
+  const variants = (product as any).variants;
+  if (variants && Array.isArray(variants) && variants.length > 0) {
+    const validPrices = variants.map((v: any) => v.price).filter((p: any) => typeof p === 'number' && p > 0);
+    if (validPrices.length > 0) {
+      const minPrice = Math.min(...validPrices);
+      const maxPrice = Math.max(...validPrices);
+      if (minPrice !== maxPrice) {
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <span className="font-bold text-slate-800 text-[13px]">
+              ₹{minPrice.toFixed(2)} – ₹{maxPrice.toFixed(2)}
+            </span>
+          </div>
+        );
+      }
+    }
+  }
+
   // If it's a specific product name or equipment, show price range to match WooCommerce mockup style
   if (product.name.includes("Pulse Massager")) {
     return "₹180.00 – ₹210.00";
@@ -147,7 +166,10 @@ export default function ProductCard({
     return () => { mounted = false; };
   }, []);
   
-  const hoverImageUrl = getHoverImageUrl(product);
+  const actualImageUrl = product.imageUrl || (product as any).thumbnail || ((product as any).images && (product as any).images[0]?.url) || "/logo/logo.png";
+  
+  const productWithResolvedImage = { ...product, imageUrl: actualImageUrl };
+  const hoverImageUrl = getHoverImageUrl(productWithResolvedImage);
 
   // Global Zustand Stores
   const storeAddToCart = useCartStore((state) => state.addToCart);
@@ -156,6 +178,7 @@ export default function ProductCard({
   const storeCart = useCartStore((state) => state.cart || []);
   const storeUpdateQuantity = useCartStore((state) => state.updateQuantity);
   const storeRemoveFromCart = useCartStore((state) => state.removeFromCart);
+  const storeSetCartOpen = useCartStore((state) => state.setCartOpen);
 
   // Determine active quantity in cart
   const itemInCart = storeCart.find((item) => item._id === product._id);
@@ -173,6 +196,16 @@ export default function ProductCard({
       onAddToCart();
     } else {
       storeAddToCart(product);
+    }
+  };
+
+  const handleCartIconClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (inCart) {
+      storeSetCartOpen(true);
+    } else {
+      handleAddToCartClick(e);
     }
   };
 
@@ -241,15 +274,15 @@ export default function ProductCard({
               </div>
             ) : (
               <>
-                <Image
-                  src={product.imageUrl || "/logo/logo.png"}
+                <Image unoptimized={actualImageUrl.includes("data:image") || actualImageUrl.includes("http")}
+                  src={actualImageUrl}
                   alt={product.name}
                   fill
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                   className={`object-cover transition-opacity duration-700 ${isHovered ? "opacity-0" : "opacity-100"}`}
                   onError={() => setImageError(true)}
                 />
-                <Image
+                <Image unoptimized={actualImageUrl.includes("data:image") || actualImageUrl.includes("http")}
                   src={hoverImageUrl || "/logo/logo.png"}
                   alt={product.name}
                   fill
@@ -327,7 +360,7 @@ export default function ProductCard({
           
           {imageError ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 text-slate-400 p-4">
-              <Image 
+              <Image unoptimized={actualImageUrl.includes("data:image") || actualImageUrl.includes("http")} 
                 src="/logo/logo.png" 
                 alt="Forever Healthcare Logo" 
                 width={60} 
@@ -340,8 +373,8 @@ export default function ProductCard({
             <>
               {/* Primary Image */}
               <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-103">
-                <Image
-                  src={product.imageUrl || "/logo/logo.png"}
+                <Image unoptimized={actualImageUrl.includes("data:image") || actualImageUrl.includes("http")}
+                  src={actualImageUrl}
                   alt={product.name}
                   fill
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
@@ -353,7 +386,7 @@ export default function ProductCard({
 
               {/* Hover Image */}
               <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-103">
-                <Image
+                <Image unoptimized={actualImageUrl.includes("data:image") || actualImageUrl.includes("http")}
                   src={hoverImageUrl || "/logo/logo.png"}
                   alt={`${product.name} alternate view`}
                   fill
@@ -377,7 +410,7 @@ export default function ProductCard({
           {/* Cart Icon Button */}
           {variant !== "wishlist" && (
             <button
-              onClick={handleAddToCartClick}
+              onClick={handleCartIconClick}
               className={`w-9 h-9 rounded-full border border-slate-100 shadow-sm flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
                 inCart 
                   ? "bg-[#0D623F] border-[#0D623F] text-white shadow-emerald-600/20" 
@@ -491,7 +524,8 @@ export default function ProductCard({
               </span>
               <button
                 onClick={handleIncreaseQty}
-                className="w-7 h-7 rounded-full bg-white text-[#0D623F] flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm active:scale-90 cursor-pointer"
+                disabled={activeCartQty >= 3}
+                className="w-7 h-7 rounded-full bg-white text-[#0D623F] flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[3]" />
               </button>
@@ -505,7 +539,7 @@ export default function ProductCard({
             </button>
           )}
           <button
-            onClick={handleAddToCartClick}
+            onClick={handleCartIconClick}
             className="w-9 h-9 rounded-full bg-[#0D623F] text-white flex items-center justify-center hover:bg-[#0a4d32] active:scale-95 transition-all cursor-pointer shadow-sm"
             aria-label="Add to cart"
           >

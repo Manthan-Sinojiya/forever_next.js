@@ -2,16 +2,28 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Category from "@/models/Category";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await dbConnect();
-    // Fetch all active categories directly from Category model
-    const categories = await Category.find({ status: "active" }).lean();
+    const url = new URL(request.url);
+    const fetchAll = url.searchParams.get("all") === "true";
+
+    const filter: any = fetchAll
+      ? {}
+      : {
+          $or: [
+            { status: "active" },
+            { status: { $exists: false } },
+            { status: null }
+          ]
+        };
+
+    const categories = await Category.find(filter).lean();
     
     // Map them to ensure they have the isActive flag that the frontend expects
     const formattedCategories = categories.map((c: any) => ({
       ...c,
-      isActive: true,
+      isActive: c.status ? c.status === "active" : true,
       image: c.image || (c.slug === "healthcare-equipments" ? "/categories/healthcare.png" : `/categories/${c.slug}.png`)
     }));
 
