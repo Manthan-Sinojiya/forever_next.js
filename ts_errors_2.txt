@@ -1,0 +1,5 @@
+scripts/seedRelevantData.ts(134,13): error TS2552: Cannot find name 'FAQ'. Did you mean 'faq1'?
+scripts/seedRelevantData.ts(135,24): error TS2552: Cannot find name 'FAQ'. Did you mean 'faq1'?
+scripts/seedRelevantData.ts(141,24): error TS2552: Cannot find name 'FAQ'. Did you mean 'faq1'?
+scripts/seedRelevantData.ts(147,24): error TS2552: Cannot find name 'FAQ'. Did you mean 'faq1'?
+scripts/seedRelevantData.ts(153,13): error TS2552: Cannot find name 'FAQ'. Did you mean 'faq1'?

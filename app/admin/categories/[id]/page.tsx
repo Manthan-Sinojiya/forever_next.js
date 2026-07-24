@@ -13,7 +13,7 @@ export default async function EditCategoryPage({ params }: { params: Promise<{ i
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Edit Category</h1>
-      <CategoryEditForm initialData={data} id={params.id} />
+      <CategoryEditForm initialData={data} id={id} />
     </div>
   );
 }

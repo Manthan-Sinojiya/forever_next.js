@@ -6,7 +6,7 @@ import { bulkSaveCmsSections } from "@/actions/admin/cms";
 import { ArrowUp, ArrowDown, Trash2, Eye, Save, Globe, ChevronDown } from "lucide-react";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 
-type SectionType = "CATEGORYGRID" | "HERO" | "PRODUCTGRID" | "RICHCONTENT" | "OFFERBANNER" | "BLOGGRID";
+type SectionType = "CATEGORYGRID" | "HERO" | "PRODUCTGRID" | "RICHCONTENT" | "OFFERBANNER" | "BLOGGRID" | "TRUSTBADGES" | "TESTIMONIALS";
 
 interface Section {
   id: string;

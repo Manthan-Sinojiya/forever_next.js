@@ -59,6 +59,7 @@ const productSchema = z.object({
   metaKeywords: z.string().optional(),
   metaDescription: z.string().optional(),
   thumbnailAlt: z.string().optional(),
+  todayDeal: z.boolean().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;

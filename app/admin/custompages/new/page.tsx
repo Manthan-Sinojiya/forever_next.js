@@ -24,8 +24,8 @@ const customPageSchema = z.object({
   featuredImage: z.string().optional(),
   ogImage: z.string().optional(),
   canonicalUrl: z.string().optional(),
-  showInNavigation: z.boolean().default(false),
-  showInFooter: z.boolean().default(false),
+  showInNavigation: z.boolean().optional(),
+  showInFooter: z.boolean().optional(),
   publishDate: z.string().optional(),
   status: z.enum(["draft", "published"]),
 });

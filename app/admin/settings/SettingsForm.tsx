@@ -30,7 +30,7 @@ const settingsSchema = z.object({
   shippingConfig: z.object({
     freeDeliveryThreshold: z.object({
       enabled: z.boolean(),
-      amount: z.coerce.number().min(0, "Amount must be greater than or equal to 0").optional(),
+      amount: z.number().min(0, "Amount must be greater than or equal to 0").optional(),
     }).optional()
   }).optional(),
   razorpay: z.object({
@@ -260,7 +260,7 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
           <label className="block text-sm font-medium text-slate-700 mb-1">Minimum Amount for Free Delivery (₹)</label>
           <input 
             type="number" 
-            {...register("shippingConfig.freeDeliveryThreshold.amount")} 
+            {...register("shippingConfig.freeDeliveryThreshold.amount", { valueAsNumber: true })} 
             className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
             min="0"
           />

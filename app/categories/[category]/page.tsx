@@ -140,7 +140,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   try {
     const products = await getProducts({ fetchAll: true });
     productsData = products.map(p => {
-      const doc = p._doc || p;
+      const doc = (p as any)._doc || p;
       return {
         _id: doc._id.toString(),
         name: doc.name,

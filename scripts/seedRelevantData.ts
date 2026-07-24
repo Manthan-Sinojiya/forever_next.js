@@ -4,7 +4,7 @@ import { Menu } from "../models/Menu";
 import { Setting } from "../models/Setting";
 import { CustomPage } from "../models/CustomPage";
 import { Testimonial } from "../models/Testimonial";
-import { FAQ } from "../models/Faq";
+import { Faq } from "../models/Faq";
 
 dotenv.config({ path: ".env.local" });
 
@@ -131,26 +131,26 @@ mongoose.connect(MONGODB_URI as string)
 
     // 5. Seed FAQ
     try {
-      await FAQ.deleteMany({});
-      const faq1 = new FAQ({
+      await Faq.deleteMany({});
+      const faq1 = new Faq({
         question: "How long does shipping take?",
         answer: "Standard shipping takes 3-5 business days across India. Express shipping is typically delivered within 24-48 hours in metro cities.",
         status: "active",
         category: "shipping"
       });
-      const faq2 = new FAQ({
+      const faq2 = new Faq({
         question: "Are your Ayurvedic products certified?",
         answer: "Yes, absolutely! All our herbal extracts and ayurvedic products are sourced from GMP-certified facilities and rigorously lab-tested for purity.",
         status: "active",
         category: "product"
       });
-      const faq3 = new FAQ({
+      const faq3 = new Faq({
         question: "What is your return policy?",
         answer: "We offer a 7-day replacement guarantee if the items delivered were defective or didn't match the order.",
         status: "active",
         category: "returns"
       });
-      await FAQ.insertMany([faq1, faq2, faq3]);
+      await Faq.insertMany([faq1, faq2, faq3]);
       console.log("FAQS seeded successfully.");
     } catch (e: any) { console.error("FAQ seed failed: ", e.message); }
 

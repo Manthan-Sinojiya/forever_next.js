@@ -5,7 +5,7 @@ const rateLimitMap = new Map();
 
 export default withAuth(
   function middleware(req) {
-    const ip = req.ip || req.headers.get("x-forwarded-for") || "unknown";
+    const ip = (req as any).ip || req.headers.get("x-forwarded-for") || "unknown";
     
     // Apply basic rate limiting for API routes
     if (req.nextUrl.pathname.startsWith("/api")) {
