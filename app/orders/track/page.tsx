@@ -162,7 +162,7 @@ function OrderTrackingContent() {
                 />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               </div>
-              <button onClick={handleTrack} disabled={loading}
+              <button onClick={() => handleTrack()} disabled={loading}
                 className="px-6 bg-gradient-to-r from-[#1E5AA8] to-[#43B97F] text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-all disabled:opacity-60 flex items-center gap-2 shadow-md">
                 {loading ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
