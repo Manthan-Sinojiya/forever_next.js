@@ -119,7 +119,7 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
               <div className="w-full sm:w-1/2 ml-auto space-y-3">
                 <div className="flex justify-between text-sm font-medium text-slate-600">
                   <span>Subtotal</span>
-                  <span className="text-slate-900">₹{Number(initialData.subtotal || initialData.total || 0).toLocaleString()}</span>
+                  <span className="text-slate-900">₹{Number(initialData.subtotal || initialData.totalAmount || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm font-medium text-slate-600">
                   <span>Shipping</span>
@@ -131,7 +131,7 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
                 </div>
                 <div className="flex justify-between font-bold text-slate-900 text-lg pt-4 border-t border-slate-200 mt-2">
                   <span>Total</span>
-                  <span className="text-indigo-600">₹{Number(initialData.total || 0).toLocaleString()}</span>
+                  <span className="text-indigo-600">₹{Number(initialData.totalAmount || initialData.total || 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -261,9 +261,9 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
                 <User className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-bold text-slate-900">{initialData.customerName || "Guest User"}</p>
-                <p className="text-sm font-medium text-slate-500 mt-0.5 break-all">{initialData.customerEmail || "No Email"}</p>
-                <p className="text-sm font-medium text-slate-500 mt-0.5">{initialData.customerPhone || "No Phone"}</p>
+                <p className="font-bold text-slate-900">{initialData.shippingAddress?.fullName || initialData.customerName || "Guest User"}</p>
+                <p className="text-sm font-medium text-slate-500 mt-0.5 break-all">{initialData.userEmail || initialData.customerEmail || "No Email"}</p>
+                <p className="text-sm font-medium text-slate-500 mt-0.5">{initialData.shippingAddress?.phone || initialData.customerPhone || "No Phone"}</p>
               </div>
             </div>
             
@@ -273,9 +273,9 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
               </h4>
               {initialData.shippingAddress ? (
                 <div className="text-sm font-medium text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1">
-                  <p>{initialData.shippingAddress.addressLine1}</p>
+                  <p>{initialData.shippingAddress.addressLine || initialData.shippingAddress.addressLine1}</p>
                   <p>{initialData.shippingAddress.city}, {initialData.shippingAddress.state}</p>
-                  <p>{initialData.shippingAddress.pincode}</p>
+                  <p>{initialData.shippingAddress.zipCode || initialData.shippingAddress.pincode}</p>
                   <p>{initialData.shippingAddress.country || 'India'}</p>
                 </div>
               ) : (

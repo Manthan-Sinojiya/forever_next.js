@@ -3,9 +3,9 @@ import { Inter, Poppins, Manrope } from "next/font/google";
 import "./globals.css";
 import ScrollProgress from "@/components/layout/ScrollProgress";
 import SessionProvider from "@/components/providers/SessionProvider";
-import CartDrawer from "@/components/layout/CartDrawer";
 import ToastContainer from "@/components/layout/ToastContainer";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
+import CartDrawer from "@/components/layout/CartDrawer";
 import Providers from "./providers";
 import { Toaster } from "react-hot-toast";
 
@@ -146,10 +146,11 @@ export default function RootLayout({
         <Providers>
           <SessionProvider>
             {children}
+            {/* Cart Drawer Component */}
             <CartDrawer />
             <ToastContainer />
             <Toaster position="top-right" />
-            <WhatsAppButton />
+            {/* <WhatsAppButton /> */}
           </SessionProvider>
         </Providers>
       </body>

@@ -12,12 +12,15 @@ export async function GET(req: NextRequest) {
 
     if (orderId) {
       // Find by orderId field or _id
-      const order = await Order.findOne({
-        $or: [
-          { orderId: orderId },
-          { _id: orderId.length === 24 ? orderId : undefined }
-        ]
-      }).lean();
+      const orConditions: any[] = [
+        { orderNumber: orderId },
+        { orderId: orderId }
+      ];
+      if (/^[0-9a-fA-F]{24}$/.test(orderId)) {
+        orConditions.push({ _id: orderId });
+      }
+
+      const order = await Order.findOne({ $or: orConditions }).lean();
 
       if (!order) {
         return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });

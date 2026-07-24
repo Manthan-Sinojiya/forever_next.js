@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/mongodb";
 import Order, { IOrder } from "@/models/Order";
+import User from "@/models/User";
 import mongoose from "mongoose";
 import { sendEmail } from "@/lib/mailer";
 import { generateInvoicePdf } from "@/lib/pdfGenerator";
@@ -22,6 +23,25 @@ export async function createOrder(data: Partial<IOrder>) {
   
   const order = await Order.create(orderData);
   
+  // Auto-save address to user profile if user exists
+  if (data.userEmail && data.userEmail !== "guest@foreverhealthcare.in") {
+    try {
+      await User.findOneAndUpdate(
+        { email: data.userEmail },
+        {
+          $set: {
+            address: data.shippingAddress?.addressLine,
+            city: data.shippingAddress?.city,
+            state: data.shippingAddress?.state,
+            phone: data.shippingAddress?.phone
+          }
+        }
+      );
+    } catch (e) {
+      console.error("Failed to auto-save address:", e);
+    }
+  }
+
   // Asynchronously trigger the email sending without awaiting it 
   // to prevent blocking the checkout response
   sendOrderConfirmationEmail(order).catch(err => {

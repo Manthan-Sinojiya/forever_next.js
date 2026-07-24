@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Package, CheckCircle2, Truck, MapPin, Download,
@@ -61,8 +62,11 @@ const MOCK_ORDER: MockOrder = {
   estimatedDelivery: "Jul 17, 2025 by 6:00 PM",
 };
 
-export default function OrderTrackingPage() {
-  const [trackId, setTrackId] = useState("");
+function OrderTrackingContent() {
+  const searchParams = useSearchParams();
+  const initialOrderId = searchParams.get("orderId") || "";
+  
+  const [trackId, setTrackId] = useState(initialOrderId);
   const [order, setOrder] = useState<MockOrder | null>(null);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
@@ -71,8 +75,9 @@ export default function OrderTrackingPage() {
     (s) => s.toLowerCase() === (order?.status || "").toLowerCase()
   );
 
-  const handleTrack = async () => {
-    if (!trackId.trim()) return;
+  const handleTrack = useCallback(async (idToTrack?: string) => {
+    const id = idToTrack || trackId;
+    if (!id.trim()) return;
     setLoading(true);
     setNotFound(false);
     setOrder(null);
@@ -83,10 +88,10 @@ export default function OrderTrackingPage() {
         const d = json.data;
         const addr = d.shippingAddress || {};
         setOrder({
-          orderId: d.orderId || d._id.slice(-8).toUpperCase(),
-          status: d.status || "Processing",
-          customer: addr.fullName || d.email || "Customer",
-          address: `${addr.line1 || addr.street || ""}, ${addr.city || ""} - ${addr.pincode || ""}`,
+          orderId: d.orderNumber || d.orderId || d._id.slice(-8).toUpperCase(),
+          status: d.orderStatus || d.status || "Processing",
+          customer: addr.fullName || d.userEmail || d.email || "Customer",
+          address: `${addr.addressLine || addr.line1 || addr.street || ""}, ${addr.city || ""} - ${addr.zipCode || addr.pincode || ""}`,
           products: (d.items || []).map((i: any) => ({
             name: i.name,
             qty: i.quantity || 1,
@@ -112,7 +117,13 @@ export default function OrderTrackingPage() {
       }
     }
     setLoading(false);
-  };
+  }, [trackId]);
+
+  useEffect(() => {
+    if (initialOrderId) {
+      handleTrack(initialOrderId);
+    }
+  }, [initialOrderId, handleTrack]);
 
   return (
     <>
@@ -322,5 +333,13 @@ export default function OrderTrackingPage() {
       </main>
       <Footer />
     </>
+  );
+}
+
+export default function OrderTrackingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center p-12">Loading...</div>}>
+      <OrderTrackingContent />
+    </Suspense>
   );
 }

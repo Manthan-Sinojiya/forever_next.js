@@ -11,6 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
+
 function CartPageContent() {
   const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
@@ -18,12 +19,13 @@ function CartPageContent() {
   const [loading, setLoading] = useState(false);
   
   // Checkout Form States
-  const [fullName, setFullName] = useState("John Doe");
-  const [phone, setPhone] = useState("+91 98765 43210");
-  const [addressLine, setAddressLine] = useState("Flat 405, Green Valley Apartments");
-  const [city, setCity] = useState("Mumbai");
-  const [state, setState] = useState("Maharashtra");
-  const [zipCode, setZipCode] = useState("400001");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [addressLine, setAddressLine] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Online");
 
   // Coupon States
   const [couponCode, setCouponCode] = useState("");
@@ -31,14 +33,6 @@ function CartPageContent() {
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
-
-  // Payment Options States
-  const [paymentMethod, setPaymentMethod] = useState("COD");
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentTab, setPaymentTab] = useState("card");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvv, setCardCvv] = useState("");
 
   const cart = useCartStore((state) => state.cart);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
@@ -50,26 +44,10 @@ function CartPageContent() {
   const searchParams = useSearchParams();
   const checkoutParam = searchParams.get("checkout") === "true";
 
+  // Hydration guard — allow client-side rendering
   useEffect(() => {
     setMounted(true);
-    
-    // Load Razorpay Script dynamically for secure online checkout
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    document.body.appendChild(script);
-
-    // Autofill details from session if available
-    if (session?.user) {
-      if (session.user.name) setFullName(session.user.name);
-    }
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, [session]);
+  }, []);
 
   // Manage checkout view state based on URL param
   useEffect(() => {
@@ -83,6 +61,44 @@ function CartPageContent() {
   const handleProceedToCheckout = () => {
     router.push("/cart?checkout=true");
   };
+
+  const handlePincodeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const code = e.target.value;
+    setZipCode(code);
+    
+    if (code.length === 6 && /^\d+$/.test(code)) {
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${code}`);
+        const data = await res.json();
+        if (data && data[0]?.Status === "Success" && data[0]?.PostOffice?.length > 0) {
+          const postOffice = data[0].PostOffice[0];
+          setCity(postOffice.District || postOffice.Block || "");
+          setState(postOffice.State || "");
+          addToast("Location auto-filled!", "success");
+        }
+      } catch (err) {
+        console.error("Failed to fetch pincode:", err);
+      }
+    }
+  };
+
+  // Pre-fill user data if available
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetch(`/api/profile?email=${encodeURIComponent(session.user.email)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data) {
+            if (!fullName) setFullName(data.data.name || "");
+            if (!phone) setPhone(data.data.phone || "");
+            if (!addressLine) setAddressLine(data.data.address || "");
+            if (!city) setCity(data.data.city || "");
+            if (!state) setState(data.data.state || "");
+          }
+        })
+        .catch(console.error);
+    }
+  }, [session?.user?.email, isCheckingOut]);
 
   if (!mounted) return null;
 
@@ -166,7 +182,6 @@ function CartPageContent() {
       const data = await response.json();
       if (data.success) {
         clearCart();
-        setShowPaymentModal(false);
         addToast("Order placed successfully! Redirecting to My Orders...", "success");
         router.push("/profile?tab=Orders");
       } else {
@@ -190,88 +205,108 @@ function CartPageContent() {
 
     if (paymentMethod === "COD") {
       await submitOrderToDatabase({ paymentMethod: "COD" });
+    } else {
+      await processRazorpayPayment();
+    }
+  };
+
+  const processRazorpayPayment = async () => {
+    setLoading(true);
+
+    const loadRazorpay = () =>
+      new Promise((resolve) => {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+      });
+
+    const isLoaded = await loadRazorpay();
+    if (!isLoaded) {
+      addToast("Failed to load Razorpay. Please check your connection.", "error");
+      setLoading(false);
       return;
     }
 
-    // Online Payment branch
-    setLoading(true);
     try {
-      const checkoutRes = await fetch("/api/checkout", {
+      const orderRes = await fetch("/api/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ totalAmount: total }),
       });
+      const orderData = await orderRes.json();
 
-      const checkoutData = await checkoutRes.json();
-      if (!checkoutRes.ok || !checkoutData.success) {
-        throw new Error(checkoutData.error || "Failed to initiate payment gateway.");
+      if (!orderData.success) {
+         addToast(orderData.error || "Failed to initialize payment", "error");
+         setLoading(false);
+         return;
+      }
+      
+      if (orderData.simulated) {
+         await submitOrderToDatabase({ paymentMethod: "Online", paymentDetails: { orderId: orderData.orderId, simulated: true } });
+         return;
       }
 
-      if (checkoutData.simulated) {
-        // Fallback to interactive simulation modal in dev environments
-        setShowPaymentModal(true);
-      } else {
-        // Trigger Razorpay SDK Popup
-        const options = {
-          key: checkoutData.keyId,
-          amount: checkoutData.amount,
-          currency: checkoutData.currency,
-          name: "Forever Healthcare",
-          description: "Purchase of Ayurvedic & Healthcare Products",
-          order_id: checkoutData.orderId,
-          handler: async function (response: any) {
-            setLoading(true);
-            try {
-              const verifyRes = await fetch("/api/checkout/verify", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                }),
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Forever Healthcare",
+        description: "Order Payment",
+        order_id: orderData.orderId,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch("/api/checkout/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              await submitOrderToDatabase({
+                 paymentMethod: "Online",
+                 paymentDetails: {
+                   orderId: response.razorpay_order_id,
+                   paymentId: response.razorpay_payment_id
+                 }
               });
-
-              const verifyData = await verifyRes.json();
-              if (verifyData.success && verifyData.verified) {
-                await submitOrderToDatabase({
-                  paymentMethod: "Online",
-                  paymentDetails: {
-                    orderId: response.razorpay_order_id,
-                    paymentId: response.razorpay_payment_id,
-                  },
-                });
-              } else {
-                addToast("Payment signature verification failed. Please try again.", "error");
-              }
-            } catch (verifyErr) {
-              console.error("Payment verification failure:", verifyErr);
-              addToast("Failed to verify transaction. Please contact support.", "error");
-            } finally {
+            } else {
+              addToast("Payment verification failed", "error");
               setLoading(false);
             }
-          },
-          prefill: {
-            name: fullName,
-            contact: phone,
-            email: session?.user?.email || "",
-          },
-          theme: {
-            color: "#059669",
-          },
-        };
+          } catch {
+            addToast("Payment verification failed", "error");
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: fullName,
+          email: session?.user?.email || "guest@foreverhealthcare.in",
+          contact: phone,
+        },
+        theme: {
+          color: "#43B97F"
+        },
+        modal: {
+          ondismiss: function() {
+            setLoading(false);
+          }
+        }
+      };
 
-        const rzp = new (window as any).Razorpay(options);
-        rzp.open();
-      }
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.on("payment.failed", function (response: any) {
+         addToast(response.error.description || "Payment failed", "error");
+         setLoading(false);
+      });
+      razorpay.open();
     } catch (err: any) {
-      console.error("Online checkout initiation failed:", err);
-      addToast(err.message || "Failed to initiate online checkout. Please try again.", "error");
-    } finally {
+      addToast(err.message || "Error processing payment", "error");
       setLoading(false);
     }
   };
@@ -421,7 +456,28 @@ function CartPageContent() {
                           />
                         </div>
 
-                        <div className="grid sm:grid-cols-3 gap-4">
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Pincode / Zip</label>
+                            <input
+                              type="text"
+                              value={zipCode}
+                              onChange={handlePincodeChange}
+                              maxLength={6}
+                              placeholder="e.g. 110001"
+                              className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Country</label>
+                            <input
+                              type="text"
+                              value="India"
+                              disabled
+                              className="w-full px-4 py-3 rounded-xl bg-slate-100 border border-transparent text-slate-500 font-medium outline-none cursor-not-allowed"
+                            />
+                          </div>
                           <div>
                             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">City</label>
                             <input
@@ -433,21 +489,12 @@ function CartPageContent() {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">State</label>
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">State (India)</label>
                             <input
                               type="text"
                               value={state}
                               onChange={(e) => setState(e.target.value)}
-                              className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Pincode / Zip</label>
-                            <input
-                              type="text"
-                              value={zipCode}
-                              onChange={(e) => setZipCode(e.target.value)}
+                              placeholder="e.g. Maharashtra"
                               className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:border-emerald-600/30 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium"
                               required
                             />
@@ -456,51 +503,40 @@ function CartPageContent() {
 
                         <div className="space-y-3 mt-6">
                           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Payment Method</label>
-                          <div className="grid grid-cols-2 gap-3">
-                            <button
-                              type="button"
-                              onClick={() => setPaymentMethod("COD")}
-                              className={`p-4 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left cursor-pointer ${
-                                paymentMethod === "COD"
-                                  ? "border-emerald-600 bg-emerald-50/50"
-                                  : "border-slate-200 hover:border-slate-300"
-                              }`}
-                            >
-                              <span className="font-bold text-sm text-slate-800">Cash on Delivery</span>
-                              <span className="text-xs text-slate-500">Pay when order arrives</span>
-                            </button>
+                          <div className="grid grid-cols-2 gap-4">
                             <button
                               type="button"
                               onClick={() => setPaymentMethod("Online")}
-                              className={`p-4 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left cursor-pointer ${
+                              className={`p-4 rounded-2xl flex border flex-col items-start gap-1 transition-all ${
                                 paymentMethod === "Online"
-                                  ? "border-emerald-600 bg-emerald-50/50"
-                                  : "border-slate-200 hover:border-slate-300"
+                                  ? "bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500"
+                                  : "bg-slate-50 border-slate-200 hover:border-emerald-300"
                               }`}
                             >
-                              <span className="font-bold text-sm text-slate-800">Online Payment</span>
-                              <span className="text-xs text-slate-500">Card / UPI / NetBanking</span>
+                              <div className="flex items-center gap-2">
+                                <CreditCard className={`w-5 h-5 ${paymentMethod === "Online" ? "text-emerald-600" : "text-slate-400"}`} />
+                                <span className="font-bold text-sm text-slate-800">Pay Online</span>
+                              </div>
+                              <span className="text-[10px] text-slate-500 font-medium">UPI, Cards, NetBanking</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setPaymentMethod("COD")}
+                              className={`p-4 rounded-2xl flex border flex-col items-start gap-1 transition-all ${
+                                paymentMethod === "COD"
+                                  ? "bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500"
+                                  : "bg-slate-50 border-slate-200 hover:border-emerald-300"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Lock className={`w-5 h-5 ${paymentMethod === "COD" ? "text-emerald-600" : "text-slate-400"}`} />
+                                <span className="font-bold text-sm text-slate-800">Cash on Delivery</span>
+                              </div>
+                              <span className="text-[10px] text-slate-500 font-medium">Pay when your order arrives</span>
                             </button>
                           </div>
                         </div>
-
-                        {paymentMethod === "COD" ? (
-                          <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-start gap-3 mt-4">
-                            <CreditCard className="w-5 h-5 text-emerald-600 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-bold text-emerald-800">Cash on Delivery (COD)</p>
-                              <p className="text-xs text-emerald-600 font-medium mt-0.5">Pay in cash or digital scan-on-delivery when your order arrives. Standard COD delivery available pan India.</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-start gap-3 mt-4">
-                            <Lock className="w-5 h-5 text-blue-600 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-bold text-blue-800">Secure Online Checkout</p>
-                              <p className="text-xs text-blue-600 font-medium mt-0.5">Your payment is encrypted and processed securely. You will be redirected to the secure gateway on submit.</p>
-                            </div>
-                          </div>
-                        )}
 
                         <button
                           type="submit"
@@ -626,123 +662,6 @@ function CartPageContent() {
           </div>
         </section>
       </main>
-      <Footer />
-
-      {/* Simulated Payment Gateway Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Lock className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-bold text-lg text-slate-800 font-heading">Secure Payment Gateway</h3>
-              </div>
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="bg-slate-50 p-4 rounded-2xl mb-6 flex justify-between items-center">
-              <span className="text-sm text-slate-500 font-semibold">Total Amount to Pay</span>
-              <span className="font-black text-xl text-emerald-600">₹{total.toFixed(2)}</span>
-            </div>
-
-            {/* Tab Headers */}
-            <div className="flex border-b border-slate-100 mb-6">
-              <button
-                type="button"
-                onClick={() => setPaymentTab("card")}
-                className={`flex-1 pb-3 text-sm font-bold border-b-2 cursor-pointer transition-all ${
-                  paymentTab === "card" ? "border-emerald-600 text-emerald-600" : "border-transparent text-slate-400"
-                }`}
-              >
-                Credit/Debit Card
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentTab("upi")}
-                className={`flex-1 pb-3 text-sm font-bold border-b-2 cursor-pointer transition-all ${
-                  paymentTab === "upi" ? "border-emerald-600 text-emerald-600" : "border-transparent text-slate-400"
-                }`}
-              >
-                UPI QR Code
-              </button>
-            </div>
-
-            {paymentTab === "card" ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Card Number</label>
-                  <input
-                    type="text"
-                    placeholder="4111 2222 3333 4444"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, "").slice(0, 16))}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 outline-none focus:border-emerald-600/30 text-sm font-semibold"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Expiry Date</label>
-                    <input
-                      type="text"
-                      placeholder="MM/YY"
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value.slice(0, 5))}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 outline-none focus:border-emerald-600/30 text-sm font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">CVV</label>
-                    <input
-                      type="password"
-                      placeholder="•••"
-                      value={cardCvv}
-                      onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 outline-none focus:border-emerald-600/30 text-sm font-semibold"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => submitOrderToDatabase({ paymentMethod: "Online", paymentDetails: { method: "Card", simulated: true } })}
-                  disabled={loading || cardNumber.length < 12 || cardExpiry.length < 4 || cardCvv.length < 3}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold text-sm mt-6 flex items-center justify-center gap-2 disabled:opacity-50 transition-all cursor-pointer"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  {loading ? "Processing..." : `Pay ₹${total.toFixed(2)}`}
-                </button>
-              </div>
-            ) : (
-              <div className="text-center space-y-4">
-                <p className="text-xs text-slate-400 font-semibold">Scan QR using Google Pay, PhonePe, Paytm or any UPI app</p>
-                <div className="bg-white border border-slate-100 p-4 rounded-2xl w-44 h-44 mx-auto flex items-center justify-center shadow-inner">
-                  <QrCode className="w-36 h-36 text-slate-800" />
-                </div>
-                <p className="text-xs font-bold text-slate-500">Merchant: Forever Healthcare Pvt Ltd</p>
-
-                <button
-                  type="button"
-                  onClick={() => submitOrderToDatabase({ paymentMethod: "Online", paymentDetails: { method: "UPI", simulated: true } })}
-                  disabled={loading}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold text-sm mt-6 flex items-center justify-center gap-2 disabled:opacity-50 transition-all cursor-pointer"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  {loading ? "Confirming..." : "Simulate Successful UPI Scan"}
-                </button>
-              </div>
-            )}
-
-            <div className="mt-6 text-center border-t border-slate-100 pt-4">
-              <p className="text-[10px] text-slate-400 font-medium">🛡️ Secure 256-bit SSL encrypted checkout powered by Razorpay</p>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
