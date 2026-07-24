@@ -460,7 +460,7 @@ export default function ProductCard({
         <div className="space-y-2">
           {/* Category */}
           {product.category && (
-            <p className="text-[10px] font-bold text-[#10B981] uppercase tracking-widest leading-none mb-1.5">
+            <p className="text-xs font-extrabold text-[#10B981] uppercase tracking-wider leading-none mb-1.5 font-heading">
               {product.category}
             </p>
           )}

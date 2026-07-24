@@ -189,7 +189,7 @@ export default function ShopClient({ presetCategory = "", presetQuery = "" }: { 
 
       {/* Categories */}
       <div className="space-y-2">
-        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Category</label>
+        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider font-heading">Category</label>
         <div className={`space-y-1 ${mobile ? "max-h-48" : "max-h-64"} overflow-y-auto pr-1 scrollbar-hide`}>
           {categories.map((cat) => {
             const isActive = selectedCategory.toLowerCase() === cat.toLowerCase();
@@ -197,13 +197,13 @@ export default function ShopClient({ presetCategory = "", presetQuery = "" }: { 
               <button
                 key={cat}
                 onClick={() => { setSelectedCategory(cat); setPage(1); }}
-                className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${isActive ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "text-slate-600 hover:bg-slate-50"}`}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all ${isActive ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "text-slate-600 hover:bg-slate-50"}`}
               >
                 <span className="flex items-center gap-1.5">
                   {cat !== "All" && <span>{CATEGORY_ICONS[cat] || "🌿"}</span>}
                   <span className="truncate">{cat}</span>
                 </span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                <span className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                   {categoryCounts[cat] || 0}
                 </span>
               </button>
@@ -266,7 +266,7 @@ export default function ShopClient({ presetCategory = "", presetQuery = "" }: { 
           </div>
         </aside>
         <section className="flex-1">
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {[...Array(9)].map((_, i) => (
               <div key={i} className="bg-white rounded-[2rem] p-4 border border-gray-100 shadow-sm">
                 <div className="aspect-square rounded-2xl mb-4 skeleton" />
@@ -374,7 +374,7 @@ export default function ShopClient({ presetCategory = "", presetQuery = "" }: { 
               </button>
             </div>
           ) : viewMode === "grid" ? (
-            <motion.div layout className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
               <AnimatePresence mode="popLayout">
                 {paginatedProducts.map((product) => (
                   <ProductCard

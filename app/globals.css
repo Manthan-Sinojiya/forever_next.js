@@ -72,6 +72,11 @@
   scroll-behavior: smooth;
 }
 
+html {
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+}
+
 ::selection {
   background: rgba(30, 90, 168, 0.15);
   color: #1E5AA8;
@@ -91,6 +96,14 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   letter-spacing: -0.02em;
   line-height: 1.2;
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
 }
 
 /* === Scrollbar Styling === */

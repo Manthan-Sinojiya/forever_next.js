@@ -8,7 +8,20 @@ export interface IBanner extends Document {
   mobileImage?: string;
   link?: string;
   buttonText?: string;
-  position: "homepage-top" | "homepage-mid" | "category" | "promotional";
+  position:
+    | "homepage-top"
+    | "homepage-mid"
+    | "about-us"
+    | "categories-overview"
+    | "category-specific"
+    | "products-overview"
+    | "product-specific"
+    | "promotional"
+    | "Homepage"
+    | "Category"
+    | "Product";
+  targetCategory?: string; // Category ID, slug or name
+  targetProduct?: string;  // Product ID or slug
   isActive: boolean;
   priority: number;
   startDate?: Date;
@@ -28,9 +41,10 @@ const BannerSchema = new Schema<IBanner>(
     buttonText: { type: String },
     position: {
       type: String,
-      enum: ["homepage-top", "homepage-mid", "category", "promotional"],
       required: true,
     },
+    targetCategory: { type: String },
+    targetProduct: { type: String },
     isActive: { type: Boolean, default: true },
     priority: { type: Number, default: 0 },
     startDate: { type: Date },
@@ -41,3 +55,4 @@ const BannerSchema = new Schema<IBanner>(
 
 export const Banner = (mongoose.models.Banner as Model<IBanner>) || mongoose.model<IBanner>("Banner", BannerSchema);
 export default Banner;
+

@@ -94,7 +94,7 @@ export default function CategoryCircles() {
                 </div>
 
                 {/* Text Label */}
-                <span className="mt-3 text-xs font-bold text-slate-700 group-hover:text-emerald-600 transition-colors line-clamp-1 max-w-[100px]">
+                <span className="mt-3 text-xs sm:text-sm font-extrabold font-heading text-slate-800 group-hover:text-emerald-600 transition-colors line-clamp-2 text-center max-w-[110px]">
                   {category.title}
                 </span>
               </Link>

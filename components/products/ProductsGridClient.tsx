@@ -178,7 +178,7 @@ export default function ProductsGridClient({
               <div className="h-4 w-32 skeleton" />
               <div className="h-8 w-40 skeleton" />
             </div>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm flex flex-col">
                   <div className="w-full aspect-square rounded-2xl mb-4 skeleton" />
@@ -247,7 +247,7 @@ export default function ProductsGridClient({
 
             {/* Categories */}
             <div className="space-y-2.5">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider font-heading">
                 Categories
               </label>
               <div className="space-y-1 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
@@ -257,7 +257,7 @@ export default function ProductsGridClient({
                     <button
                       key={cat}
                       onClick={() => setSelectedCategory(cat)}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
+                      className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all ${
                         isActive
                           ? "bg-emerald-50 text-emerald-600"
                           : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
@@ -265,7 +265,7 @@ export default function ProductsGridClient({
                     >
                       <span className="truncate">{cat}</span>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full ${
+                        className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
                           isActive ? "bg-emerald-200/50 text-emerald-600" : "bg-slate-100 text-slate-500"
                         }`}
                       >
@@ -395,7 +395,7 @@ export default function ProductsGridClient({
           ) : (
             <motion.div
               layout
-              className="grid sm:grid-cols-2 md:grid-cols-3 gap-5"
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
             >
               <AnimatePresence mode="popLayout">
                 {filteredProducts.map((product) => {
@@ -474,7 +474,7 @@ export default function ProductsGridClient({
 
               {/* Categories */}
               <div className="space-y-2.5 flex-1 overflow-hidden flex flex-col">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">
+                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider font-heading shrink-0">
                   Categories
                 </label>
                 <div className="space-y-1 overflow-y-auto pr-1 flex-1">
@@ -484,14 +484,14 @@ export default function ProductsGridClient({
                       <button
                         key={cat}
                         onClick={() => setSelectedCategory(cat)}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
+                        className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold flex items-center justify-between transition-all ${
                           isActive
                             ? "bg-emerald-50 text-emerald-600"
                             : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
                         }`}
                       >
                         <span className="truncate">{cat}</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                        <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
                           {categoryCounts[cat] || 0}
                         </span>
                       </button>

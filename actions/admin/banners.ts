@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { Banner } from "@/models/Banner";
+import { Category } from "@/models/Category";
+import { Product } from "@/models/Product";
 import connectDB from "@/lib/mongodb";
 
 export async function getBanners(search?: string, page: number = 1, limit: number = 10) {
@@ -81,3 +83,58 @@ export async function deleteBanner(id: string) {
     return { success: false, error: "Failed to delete banner" };
   }
 }
+
+export async function getActiveBannerByPosition(position: string, targetId?: string) {
+  try {
+    await connectDB();
+    const query: any = { isActive: true, position };
+
+    if (targetId) {
+      if (position === "category-specific" || position === "Category") {
+        query.$or = [
+          { targetCategory: targetId },
+          { targetCategory: { $regex: new RegExp(targetId.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i") } }
+        ];
+      } else if (position === "product-specific" || position === "Product") {
+        query.$or = [
+          { targetProduct: targetId },
+          { targetProduct: { $regex: new RegExp(targetId.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i") } }
+        ];
+      }
+    }
+
+    let banner = await Banner.findOne(query).sort({ priority: -1, createdAt: -1 }).lean();
+
+    // If specific target match not found, fall back to general position match
+    if (!banner && targetId) {
+      const fallbackQuery: any = { isActive: true, position };
+      banner = await Banner.findOne(fallbackQuery).sort({ priority: -1, createdAt: -1 }).lean();
+    }
+
+
+    if (!banner) return { success: false, data: null };
+
+    return { success: true, data: JSON.parse(JSON.stringify(banner)) };
+  } catch (error) {
+    console.error("Error fetching active banner by position:", error);
+    return { success: false, data: null };
+  }
+}
+
+export async function getBannerOptions() {
+  try {
+    await connectDB();
+    const categories = await Category.find({}, "_id name slug").sort({ name: 1 }).lean();
+    const products = await Product.find({}, "_id name slug thumbnail").sort({ name: 1 }).limit(300).lean();
+    return {
+      success: true,
+      categories: JSON.parse(JSON.stringify(categories)),
+      products: JSON.parse(JSON.stringify(products)),
+    };
+  } catch (error) {
+    console.error("Error fetching banner options:", error);
+    return { success: false, categories: [], products: [] };
+  }
+}
+
+

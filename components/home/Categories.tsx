@@ -162,7 +162,7 @@ export default function Categories({ title, limit, subtitle, description }: { ti
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E8F5EE] border border-emerald-100/50 text-[#10B981] text-[10px] font-black uppercase tracking-widest mb-4"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E8F5EE] border border-emerald-100/50 text-[#10B981] text-xs font-black uppercase tracking-wider mb-4"
           >
             <Leaf className="w-3.5 h-3.5 fill-[#10B981]/20" />
             {subtitle || "Explore Categories"}
@@ -242,12 +242,12 @@ export default function Categories({ title, limit, subtitle, description }: { ti
                   <div className="p-6 flex flex-col justify-between flex-grow">
                     <div>
                       {/* Title */}
-                      <h3 className="text-base font-bold font-heading text-slate-800 mb-2 group-hover:text-primary transition-colors duration-300">
+                      <h3 className="text-base sm:text-lg font-extrabold font-heading text-slate-800 mb-2 group-hover:text-primary transition-colors duration-300">
                         {category.title}
                       </h3>
                       
                       {/* Description */}
-                      <p className="text-xs text-slate-500 font-normal leading-relaxed mb-6">
+                      <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed mb-6">
                         {category.description}
                       </p>
                     </div>
@@ -255,7 +255,7 @@ export default function Categories({ title, limit, subtitle, description }: { ti
                     {/* Footer area inside card */}
                     <div className="flex items-center justify-between">
                       {/* Count badge */}
-                      <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold ${category.bgLight} tracking-wider uppercase`}>
+                      <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold ${category.bgLight} tracking-wider uppercase`}>
                         {getCategoryBadgeIcon(category.title, category.textColor)}
                         <span>
                           {counts[category.title] !== undefined

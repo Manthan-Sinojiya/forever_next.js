@@ -5,6 +5,9 @@ import ProductsGridClient from "@/components/products/ProductsGridClient";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { getProducts } from "@/services/productService";
+import PageBanner from "@/components/ui/PageBanner";
+import { getActiveBannerByPosition } from "@/actions/admin/banners";
+
 
 const CATEGORY_META: Record<string, {
   title: string;
@@ -158,28 +161,51 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     console.error("Failed to fetch category products", error);
   }
 
+  const bannerRes = await getActiveBannerByPosition("category-specific", category);
+  const banner = bannerRes?.data;
+
   return (
     <>
       <Navbar />
       <main className="min-h-screen bg-[#F8FAFC]">
-        {/* Hero Banner */}
-        <div className={`bg-gradient-to-r ${meta.gradient} text-white py-14 relative overflow-hidden`}>
-          <div className="absolute right-8 top-1/2 -translate-y-1/2 text-[8rem] opacity-10 select-none">{meta.icon}</div>
-          <div className="container mx-auto px-4">
+        {/* Dynamic Category Banner or Hero Banner */}
+        {banner ? (
+          <div className="container mx-auto px-4 pt-6">
             {/* Breadcrumb */}
-            <nav className="flex items-center gap-1.5 text-white/70 text-xs font-medium mb-4">
-              <Link href="/" className="hover:text-white transition-colors">Home</Link>
+            <nav className="flex items-center gap-1.5 text-slate-500 text-xs font-medium mb-3">
+              <Link href="/" className="hover:text-emerald-600 transition-colors">Home</Link>
               <ChevronRight className="w-3 h-3" />
-              <Link href="/shop" className="hover:text-white transition-colors">Shop</Link>
+              <Link href="/shop" className="hover:text-emerald-600 transition-colors">Shop</Link>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-white">{displayName}</span>
+              <span className="text-slate-800 font-semibold">{displayName}</span>
             </nav>
-            <div className="max-w-2xl">
-              <h1 className="text-4xl md:text-5xl font-bold font-heading mb-3">{displayName}</h1>
-              <p className="text-white/80 leading-relaxed">{meta.description}</p>
+            <PageBanner
+              banner={banner}
+              defaultTitle={displayName}
+              defaultSubtitle={meta.description}
+              badge={displayName}
+            />
+          </div>
+        ) : (
+          <div className={`bg-gradient-to-r ${meta.gradient} text-white py-14 relative overflow-hidden`}>
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 text-[8rem] opacity-10 select-none">{meta.icon}</div>
+            <div className="container mx-auto px-4">
+              {/* Breadcrumb */}
+              <nav className="flex items-center gap-1.5 text-white/70 text-xs font-medium mb-4">
+                <Link href="/" className="hover:text-white transition-colors">Home</Link>
+                <ChevronRight className="w-3 h-3" />
+                <Link href="/shop" className="hover:text-white transition-colors">Shop</Link>
+                <ChevronRight className="w-3 h-3" />
+                <span className="text-white">{displayName}</span>
+              </nav>
+              <div className="max-w-2xl">
+                <h1 className="text-4xl md:text-5xl font-bold font-heading mb-3">{displayName}</h1>
+                <p className="text-white/80 leading-relaxed">{meta.description}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
 
         {/* SEO Content Strip */}
         {meta.seoContent && (

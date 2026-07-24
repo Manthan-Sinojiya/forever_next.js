@@ -3,6 +3,8 @@ import { Product } from "@/models/Product";
 import ProductDetailsClient from "./ProductDetailsClient";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import PageBanner from "@/components/ui/PageBanner";
+import { getActiveBannerByPosition } from "@/actions/admin/banners";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -46,7 +48,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
       product = {
         ...rawProduct,
         category: rawProduct.category?.name || rawProduct.category || "General",
-        // Prioritize thumbnail, then first gallery image, then fallback
         imageUrl: rawProduct.thumbnail || (rawProduct.images && rawProduct.images.length > 0 ? rawProduct.images[0].url : "/logo/logo.png"),
         rating: rawProduct.rating || 5,
         originalPrice: rawProduct.mrp || Math.round(rawProduct.price * 1.35),
@@ -61,9 +62,22 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     notFound();
   }
 
+  const bannerRes = await getActiveBannerByPosition("product-specific", id);
+  const banner = bannerRes?.data;
+
   return (
     <>
       <Navbar />
+      {banner && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <PageBanner
+            banner={banner}
+            defaultTitle={product.name}
+            defaultSubtitle="Special offer & healthcare details"
+            badge="Product Deal"
+          />
+        </div>
+      )}
       <ProductDetailsClient product={product} />
       <Footer />
     </>

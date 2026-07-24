@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Leaf, HeartPulse, Award, ShieldCheck, Users, Target, Activity, Stethoscope } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import PageBanner from "@/components/ui/PageBanner";
 
 const VALUES = [
   { icon: Leaf, title: "Pure Ayurveda", desc: "Sourced directly from authentic farms, ensuring 100% natural ingredients without harmful chemicals." },
@@ -19,33 +20,45 @@ const STATS = [
   { value: "100%", label: "Natural Ingredients", icon: Leaf },
 ];
 
-export default function AboutClient() {
+export default function AboutClient({ banner }: { banner?: any }) {
   return (
     <>
       <Navbar />
       <main className="flex-1 w-full bg-[#F8FAFC]">
-        {/* Hero Section */}
-        <section className="relative bg-gradient-to-br from-[#1E5AA8] via-[#2A75C3] to-[#43B97F] overflow-hidden py-24 lg:py-32">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-          <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-white/10 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-[#43B97F]/30 rounded-full blur-3xl"></div>
-          
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="max-w-3xl mx-auto text-center text-white">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
-                  <Activity className="w-4 h-4" /> About Forever Healthcare
-                </span>
-                <h1 className="text-4xl md:text-5xl lg:text-7xl font-black font-heading mb-6 leading-tight">
-                  Bridging <span className="text-[#43B97F]">Ayurveda</span> & Modern Science
-                </h1>
-                <p className="text-lg md:text-xl text-white/90 leading-relaxed font-medium">
-                  We are on a mission to make premium, authentic healthcare accessible to everyone. Experience the power of nature backed by clinical research.
-                </p>
-              </motion.div>
-            </div>
+        {/* Dynamic Banner or Fallback Hero Section */}
+        {banner ? (
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+            <PageBanner
+              banner={banner}
+              defaultTitle="About Forever Healthcare"
+              defaultSubtitle="Bridging Ayurveda & Modern Science for holistic health and wellness."
+              badge="About Us"
+            />
           </div>
-        </section>
+        ) : (
+          <section className="relative bg-gradient-to-br from-[#1E5AA8] via-[#2A75C3] to-[#43B97F] overflow-hidden py-24 lg:py-32">
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+            <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-white/10 rounded-full blur-3xl"></div>
+            <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-[#43B97F]/30 rounded-full blur-3xl"></div>
+            
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              <div className="max-w-3xl mx-auto text-center text-white">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
+                    <Activity className="w-4 h-4" /> About Forever Healthcare
+                  </span>
+                  <h1 className="text-4xl md:text-5xl lg:text-7xl font-black font-heading mb-6 leading-tight">
+                    Bridging <span className="text-[#43B97F]">Ayurveda</span> & Modern Science
+                  </h1>
+                  <p className="text-lg md:text-xl text-white/90 leading-relaxed font-medium">
+                    We are on a mission to make premium, authentic healthcare accessible to everyone. Experience the power of nature backed by clinical research.
+                  </p>
+                </motion.div>
+              </div>
+            </div>
+          </section>
+        )}
+
 
         {/* Our Story & Mission */}
         <section className="py-20 lg:py-28 relative -mt-10">

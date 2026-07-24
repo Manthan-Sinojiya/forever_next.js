@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
+import PageBanner from "@/components/ui/PageBanner";
+import { getActiveBannerByPosition } from "@/actions/admin/banners";
 
 export const metadata: Metadata = {
   title: "All Categories | Forever Healthcare",
@@ -21,22 +23,24 @@ const CATEGORIES = [
   { slug: "weight-management", name: "Weight Management", icon: "⚖️", description: "Fat burners, detox & meal plans", count: "70+", gradient: "from-cyan-400 to-blue-500" },
 ];
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  const bannerRes = await getActiveBannerByPosition("categories-overview");
+  const banner = bannerRes?.data;
+
   return (
     <>
       <Navbar />
       <main className="min-h-screen bg-[#F8FAFC]">
-        {/* Banner */}
-        <div className="bg-gradient-to-r from-[#1E5AA8] to-[#43B97F] text-white py-14">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold font-heading mb-3">Shop by Category</h1>
-            <p className="text-white/80 max-w-xl mx-auto">
-              Discover products across 10+ healthcare & wellness categories
-            </p>
-          </div>
+        <div className="container mx-auto px-4 pt-6">
+          <PageBanner
+            banner={banner}
+            defaultTitle="Shop by Category"
+            defaultSubtitle="Discover products across 10+ healthcare & wellness categories"
+            badge="Categories"
+          />
         </div>
 
-        <div className="container mx-auto px-4 py-12">
+        <div className="container mx-auto px-4 py-8">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {CATEGORIES.map((cat) => (
               <Link key={cat.slug} href={`/categories/${cat.slug}`}
@@ -47,10 +51,10 @@ export default function CategoriesPage() {
                   <span className="text-4xl relative z-10">{cat.icon}</span>
                 </div>
                 <div className="p-5">
-                  <h3 className="font-bold text-slate-800 text-base mb-1 group-hover:text-emerald-700 transition-colors">{cat.name}</h3>
-                  <p className="text-slate-500 text-xs mb-3 leading-relaxed">{cat.description}</p>
+                  <h3 className="font-extrabold font-heading text-slate-800 text-base sm:text-lg mb-1 group-hover:text-emerald-700 transition-colors">{cat.name}</h3>
+                  <p className="text-slate-500 text-xs sm:text-sm mb-3 leading-relaxed">{cat.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+                    <span className="text-xs font-extrabold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
                       {cat.count} Products
                     </span>
                     <span className="text-emerald-600 text-xs font-bold group-hover:translate-x-1 transition-transform inline-block">

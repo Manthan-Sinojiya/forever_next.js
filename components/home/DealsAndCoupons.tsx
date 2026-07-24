@@ -263,7 +263,7 @@ export default function DealsAndCoupons({ title, subtitle, endDate }: { title?: 
         {loading ? (
           <div className="flex overflow-x-auto gap-6 scrollbar-hide snap-x snap-mandatory pb-4">
             {[1, 2, 3, 4, 5].map((s) => (
-              <div key={s} className="snap-start shrink-0 w-[240px] sm:w-[270px] md:w-[280px] lg:w-[286px]">
+              <div key={s} className="snap-start shrink-0 w-[calc(100vw-3rem)] max-w-full sm:w-[270px] md:w-[280px] lg:w-[286px]">
                 <SkeletonCard />
               </div>
             ))}
@@ -280,7 +280,7 @@ export default function DealsAndCoupons({ title, subtitle, endDate }: { title?: 
               return (
                 <div
                   key={product._id}
-                  className="snap-start shrink-0 w-[240px] sm:w-[270px] md:w-[280px] lg:w-[286px]"
+                  className="snap-start shrink-0 w-[calc(100vw-3rem)] max-w-full sm:w-[270px] md:w-[280px] lg:w-[286px]"
                 >
                   <ProductCard
                     product={product}
