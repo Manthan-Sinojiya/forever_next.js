@@ -10,6 +10,7 @@ import dynamic from "next/dynamic";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { Plus, Trash2, ArrowLeft, Save, Check, AlertCircle, ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
@@ -24,9 +25,17 @@ const productSchema = z.object({
   // Pricing & Stock
   mrp: z.number().min(0, "MRP must be non-negative"),
   price: z.number().optional(),
+  taxType: z.enum(["inclusive", "exclusive"]).optional(),
   gst: z.number().optional(),
   inventory: z.number().min(0, "Inventory must be non-negative"),
   inStock: z.boolean().optional(),
+  customShippingEnabled: z.boolean().optional(),
+  shippingCharges: z.array(
+    z.object({
+      location: z.string().min(1, "Location is required"),
+      charge: z.number().min(0, "Charge must be non-negative")
+    })
+  ).optional(),
   
   // Physical
   weight: z.string().optional(),
@@ -58,7 +67,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 const tabs = [
   "General",
   "Media",
-  "Pricing & Inventory",
+  "Pricing, Inventory & Delivery",
   "Content & Details",
   "Healthcare Specific"
 ];
@@ -110,8 +119,11 @@ export default function EditProductClient({ initialData }: { initialData: any })
       inventory: initialData?.inventory || 0,
       mrp: initialData?.mrp || 0,
       price: initialData?.price || undefined,
+      taxType: initialData?.taxType || "inclusive",
       gst: initialData?.gst || 0,
       inStock: initialData?.inStock ?? true,
+      customShippingEnabled: initialData?.customShippingEnabled || false,
+      shippingCharges: initialData?.shippingCharges || [],
       isFeatured: initialData?.isFeatured || false,
       isTrending: initialData?.isTrending || false,
       isBestSeller: initialData?.isBestSeller || false,
@@ -153,18 +165,25 @@ export default function EditProductClient({ initialData }: { initialData: any })
         ingredients: ingredientsContent,
         benefits: benefitsContent,
         howToUse: howToUseContent,
-        images: images.filter(img => img.url !== "")
+        images: images.filter(img => img.url !== ""),
+        taxType: data.taxType || "inclusive",
+        gst: (data.taxType === "exclusive") ? data.gst : undefined,
+        customShippingEnabled: data.customShippingEnabled || false,
+        shippingCharges: data.customShippingEnabled ? data.shippingCharges || [] : [],
       };
       
       const res = await updateProduct(initialData._id, payload);
       if (res.success) {
+        toast.success("Product updated successfully!");
         router.push("/admin/products");
         router.refresh();
       } else {
-        setError(res.error || "Failed to create product");
+        setError(res.error || "Failed to update product");
+        toast.error(res.error || "Failed to update product");
       }
     } catch {
       setError("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -402,20 +421,20 @@ export default function EditProductClient({ initialData }: { initialData: any })
                           </div>
                           
                           <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Meta Keywords</label>
-                            <input 
-                              {...register("metaKeywords")} 
-                              placeholder="ayurveda, health, natural..."
-                              className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
-                            />
-                          </div>
-                          
-                          <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1.5">Meta Description</label>
                             <textarea 
                               {...register("metaDescription")} 
                               rows={3}
                               className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-4 focus:bg-white resize-y" 
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Meta Keywords</label>
+                            <input 
+                              {...register("metaKeywords")} 
+                              placeholder="ayurveda, health, natural..."
+                              className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
                             />
                           </div>
                         </div>
@@ -544,7 +563,7 @@ export default function EditProductClient({ initialData }: { initialData: any })
                     </motion.div>
                   )}
 
-                  {activeTab === "Pricing & Inventory" && (
+                  {activeTab === "Pricing, Inventory & Delivery" && (
                     <motion.div 
                       key="pricing"
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}
@@ -584,32 +603,134 @@ export default function EditProductClient({ initialData }: { initialData: any })
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1.5">SKU (Stock Keeping Unit)</label>
-                          <input 
-                            {...register("sku")} 
-                            placeholder="PROD-001"
-                            className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
-                          />
+                          <label className="block text-sm font-medium text-slate-700 mb-1.5">Tax Setup</label>
+                          <select 
+                            {...register("taxType")} 
+                            className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white"
+                          >
+                            <option value="inclusive">Taxes are included in prices</option>
+                            <option value="exclusive">Add tax (GST) separately</option>
+                          </select>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1.5">Available Stock <span className="text-rose-500">*</span></label>
-                          <input 
-                            type="number" 
-                            {...register("inventory", { valueAsNumber: true })} 
-                            className={`w-full bg-slate-50 border ${errors.inventory ? 'border-rose-300' : 'border-slate-200 hover:border-slate-300 focus:border-indigo-400 focus:ring-indigo-100'} rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white`} 
-                          />
-                          {errors.inventory && <p className="text-rose-500 text-xs mt-1.5 font-medium">{errors.inventory.message}</p>}
+                        {watch("taxType") === "exclusive" && (
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">GST (%)</label>
+                            <input 
+                              type="number" 
+                              {...register("gst", { valueAsNumber: true })} 
+                              placeholder="18"
+                              className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-6 pt-6 border-t border-slate-200/60 mt-8">
+                        <h4 className="text-sm font-bold text-slate-900 tracking-wider">Inventory</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">SKU (Stock Keeping Unit)</label>
+                            <input 
+                              {...register("sku")} 
+                              placeholder="PROD-001"
+                              className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Available Stock <span className="text-rose-500">*</span></label>
+                            <input 
+                              type="number" 
+                              {...register("inventory", { valueAsNumber: true })} 
+                              className={`w-full bg-slate-50 border ${errors.inventory ? 'border-rose-300' : 'border-slate-200 hover:border-slate-300 focus:border-indigo-400 focus:ring-indigo-100'} rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white`} 
+                            />
+                            {errors.inventory && <p className="text-rose-500 text-xs mt-1.5 font-medium">{errors.inventory.message}</p>}
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1.5">GST (%)</label>
-                          <input 
-                            type="number" 
-                            {...register("gst", { valueAsNumber: true })} 
-                            placeholder="18"
-                            className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:ring-indigo-100 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-sm outline-none transition-all focus:ring-4 focus:bg-white" 
-                          />
+                      </div>
+
+                      <div className="space-y-6 pt-6 border-t border-slate-200/60 mt-8">
+                        <h4 className="text-sm font-bold text-slate-900 tracking-wider">Delivery & Shipping</h4>
+                        <div className="space-y-4">
+                          <label className={`
+                            relative flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all
+                            ${watch("customShippingEnabled") ? 'bg-indigo-50/50 border-indigo-200' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}
+                          `}>
+                            <div>
+                              <p className={`text-sm font-bold ${watch("customShippingEnabled") ? 'text-indigo-900' : 'text-slate-700'}`}>Custom Shipping Rates</p>
+                              <p className="text-xs text-slate-500 mt-0.5">Configure specific shipping charges for this product per location.</p>
+                            </div>
+                            <div className="relative inline-flex items-center">
+                              <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={watch("customShippingEnabled")}
+                                onChange={(e) => {
+                                  const val = e.target.checked;
+                                  setValue("customShippingEnabled", val);
+                                  if (val && (!watch("shippingCharges") || watch("shippingCharges")?.length === 0)) {
+                                    setValue("shippingCharges", [{ location: "", charge: 0 }]);
+                                  }
+                                }}
+                              />
+                              <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                            </div>
+                          </label>
+
+                          {watch("customShippingEnabled") && (
+                            <div className="border border-slate-200/60 rounded-2xl p-6 space-y-4 bg-white/50">
+                              <div className="flex justify-between items-center mb-4">
+                                <div>
+                                  <h4 className="text-sm font-bold text-slate-800">Location Rates</h4>
+                                  <p className="text-xs text-slate-500">Add shipping rates based on location/pincode.</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const existing = watch("shippingCharges") || [];
+                                    setValue("shippingCharges", [...existing, { location: "", charge: 0 }]);
+                                  }}
+                                  className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-indigo-100 transition-colors"
+                                >
+                                  <Plus className="w-3.5 h-3.5" /> Add Location
+                                </button>
+                              </div>
+                              {(watch("shippingCharges") || []).map((chargeObj, index) => (
+                                <div key={index} className="flex gap-4 items-end bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                  <div className="flex-1">
+                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">State / City / Pincode</label>
+                                    <input 
+                                      {...register(`shippingCharges.${index}.location` as const)}
+                                      placeholder="e.g. Maharashtra or 400001"
+                                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" 
+                                    />
+                                  </div>
+                                  <div className="w-32">
+                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Charge (₹)</label>
+                                    <input 
+                                      type="number"
+                                      {...register(`shippingCharges.${index}.charge` as const, { valueAsNumber: true })}
+                                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" 
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const current = watch("shippingCharges") || [];
+                                      current.splice(index, 1);
+                                      setValue("shippingCharges", current);
+                                    }}
+                                    className="p-2 text-slate-400 bg-white rounded-lg shadow-sm border border-slate-200 hover:text-rose-600 hover:border-rose-200 transition-colors mb-0.5"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </motion.div>

@@ -111,7 +111,7 @@ function getOriginalPrice(price: number, id: string) {
   return Math.round(price * (1 + pct / 100));
 }
 
-export default function FeaturedProducts({ title = "Best Selling Products", limit }: { title?: string, limit?: number }) {
+export default function FeaturedProducts({ title = "Best Selling Products", limit, description, subtitle }: { title?: string, limit?: number, description?: string, subtitle?: string }) {
   const [products, setProducts] = useState<Product[]>(STATIC_PRODUCTS);
   const [loading, setLoading] = useState(false);
   const [wishlisted, setWishlisted] = useState<{ [key: string]: boolean }>({});
@@ -131,12 +131,15 @@ export default function FeaturedProducts({ title = "Best Selling Products", limi
         const json = await res.json();
         if (cancelled) return;
         if (json.success && json.data && json.data.length > 0) {
-          let parsed = json.data.map((p: Product & { originalPrice?: number }) => ({
+          let parsed = json.data.map((p: any) => ({
             ...p,
             originalPrice: p.originalPrice || getOriginalPrice(p.price, p._id),
+            imageUrl: p.images && p.images.length > 0 ? p.images[0].url : "/products/missing-image-test.png",
+            rating: p.rating || 5,
+            category: p.category?.name || p.category || "General"
           }));
           if (limit && parsed.length > limit) {
-             parsed = parsed.slice(0, limit);
+            parsed = parsed.slice(0, limit);
           }
           setProducts(parsed);
         } else {
@@ -217,21 +220,31 @@ export default function FeaturedProducts({ title = "Best Selling Products", limi
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <div className="flex flex-col gap-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="bg-emerald-50 border border-emerald-100 text-emerald-650 text-emerald-600 px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
-                India&apos;s Trusted Wellness & Nutrition Brand
-              </span>
-              <span className="bg-blue-50 border border-blue-100 text-blue-600 px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
-                Trusted By 15 Lakh+ Consumers
-              </span>
-            </div>
+            {subtitle ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {subtitle.split(',').map((tag, idx) => (
+                  <span key={idx} className={`border px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${idx % 2 === 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
+                    {tag.trim()}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="bg-emerald-50 border border-emerald-100 text-emerald-600 px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                  India's Trusted Wellness & Nutrition Brand
+                </span>
+                <span className="bg-blue-50 border border-blue-100 text-blue-600 px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                  Trusted By 15 Lakh+ Consumers
+                </span>
+              </div>
+            )}
             <h2 className="text-3xl font-extrabold font-heading text-slate-800 leading-tight">
-              {title.split(' ').map((word, i, arr) => 
+              {title.split(' ').map((word, i, arr) =>
                 i === arr.length - 1 ? <span key={i} className="gradient-text">{word}</span> : <span key={i}>{word} </span>
               )}
             </h2>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-              Science-Backed. Ayurveda-Inspired. Wellness Evolved — Naturally.
+              {description || "Science-Backed. Ayurveda-Inspired. Wellness Evolved — Naturally."}
             </p>
           </div>
           <div className="flex items-center gap-4 self-end md:self-auto">

@@ -61,7 +61,7 @@ export async function createBanner(data: any) {
 export async function updateBanner(id: string, data: any) {
   try {
     await connectDB();
-    const updated = await Banner.findByIdAndUpdate(id, data, { new: true });
+    const updated = await Banner.findByIdAndUpdate(id, data, { returnDocument: 'after' });
     revalidatePath("/admin/banners");
     return { success: true, data: updated?._id.toString() };
   } catch (error) {

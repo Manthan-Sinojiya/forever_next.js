@@ -22,6 +22,7 @@ interface DataTableProps<TData, TValue> {
   searchKey?: string
   createHref?: string
   onAdd?: () => void
+  onEdit?: (row: TData) => void
   onDelete?: (id: string) => void
   pageCount?: number
   onPaginationChange?: (updater: any) => void
@@ -38,6 +39,7 @@ export function DataTable<TData extends { _id?: string; id?: string }, TValue>({
   searchKey = "name",
   createHref,
   onAdd,
+  onEdit,
   onDelete,
   pageCount = -1,
   onPaginationChange,
@@ -90,7 +92,7 @@ export function DataTable<TData extends { _id?: string; id?: string }, TValue>({
                 ? onGlobalFilterChange?.(event.target.value) 
                 : setInternalGlobalFilter(event.target.value)
             }
-            className="pl-9 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full text-sm dark:bg-slate-900 dark:border-slate-800"
+            className="pl-9 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full text-sm"
           />
         </div>
         {createHref ? (
@@ -111,15 +113,15 @@ export function DataTable<TData extends { _id?: string; id?: string }, TValue>({
           </button>
         ) : null}
       </div>
-      <div className="rounded-md border border-gray-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900">
+      <div className="rounded-md border border-gray-200 overflow-hidden bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-300">
+            <thead className="bg-gray-50 text-gray-700">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     return (
-                      <th key={header.id} className="px-4 py-3 font-medium border-b border-gray-200 dark:border-slate-700">
+                      <th key={header.id} className="px-4 py-3 font-medium border-b border-gray-200">
                         {header.isPlaceholder ? null : (
                           <div 
                             className={cn(
@@ -140,8 +142,8 @@ export function DataTable<TData extends { _id?: string; id?: string }, TValue>({
                       </th>
                     )
                   })}
-                  {(onDelete || createHref) && (
-                    <th className="px-4 py-3 font-medium border-b border-gray-200 dark:border-slate-700 text-right">
+                  {(onDelete || createHref || onEdit) && (
+                    <th className="px-4 py-3 font-medium border-b border-gray-200 text-right">
                       Actions
                     </th>
                   )}
@@ -153,7 +155,7 @@ export function DataTable<TData extends { _id?: string; id?: string }, TValue>({
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
+                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-4 py-3 align-middle">
@@ -163,21 +165,29 @@ export function DataTable<TData extends { _id?: string; id?: string }, TValue>({
                         )}
                       </td>
                     ))}
-                    {(onDelete || createHref) && (
+                    {(onDelete || createHref || onEdit) && (
                       <td className="px-4 py-3 align-middle text-right">
                         <div className="flex items-center justify-end gap-2">
                           {createHref && (
                             <Link
                               href={`${createHref.replace('/new', '')}/${row.original._id || row.original.id}`}
-                              className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                             >
                               <Edit className="h-4 w-4" />
                             </Link>
                           )}
+                          {onEdit && (
+                            <button
+                              onClick={() => onEdit(row.original)}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                          )}
                           {onDelete && (
                             <button
                               onClick={() => onDelete(row.original._id || row.original.id as string)}
-                              className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -202,7 +212,7 @@ export function DataTable<TData extends { _id?: string; id?: string }, TValue>({
         </div>
       </div>
       <div className="flex items-center justify-between py-4">
-        <div className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="text-sm text-gray-500">
           Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
           {Math.min(
             (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
@@ -214,14 +224,14 @@ export function DataTable<TData extends { _id?: string; id?: string }, TValue>({
           <button
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="px-3 py-1 border border-gray-200 dark:border-slate-700 rounded-md text-sm disabled:opacity-50 dark:bg-slate-800"
+            className="px-3 py-1 border border-gray-200 rounded-md text-sm disabled:opacity-50"
           >
             Previous
           </button>
           <button
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="px-3 py-1 border border-gray-200 dark:border-slate-700 rounded-md text-sm disabled:opacity-50 dark:bg-slate-800"
+            className="px-3 py-1 border border-gray-200 rounded-md text-sm disabled:opacity-50"
           >
             Next
           </button>

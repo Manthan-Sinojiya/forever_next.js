@@ -73,7 +73,7 @@ export async function updateProduct(id: string, data: any) {
   try {
     await dbConnect();
     const updatedProduct = await Product.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
     revalidatePath("/admin/products");

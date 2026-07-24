@@ -4,57 +4,41 @@ import { motion } from "framer-motion";
 import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 
-const testimonials = [
-  {
-    name: "Sarah Jenkins",
-    role: "Regular Customer",
-    initials: "SJ",
-    color: "from-pink-500 to-rose-400",
-    content:
-      "Forever Healthcare has completely changed how I manage my family's wellness. The Ayurvedic supplements are top-notch and delivery is always on time. Highly recommended!",
-    rating: 5,
-  },
-  {
-    name: "Michael Chen",
-    role: "Fitness Coach",
-    initials: "MC",
-    color: "from-blue-500 to-cyan-400",
-    content:
-      "As a fitness coach, I only recommend the best to my clients. The Men's Vitality Booster and protein supplements here are of export standard quality. Great experience!",
-    rating: 5,
-  },
-  {
-    name: "Priya Sharma",
-    role: "Verified Buyer",
-    initials: "PS",
-    color: "from-emerald-500 to-green-400",
-    content:
-      "The digital blood pressure monitor I bought works perfectly. Very easy to use and accurate. Their customer support team even helped me set it up remotely!",
-    rating: 5,
-  },
-  {
-    name: "Rajesh Kumar",
-    role: "Returning Customer",
-    initials: "RK",
-    color: "from-violet-500 to-purple-400",
-    content:
-      "I've been ordering from Forever Healthcare for over 2 years now. The quality is consistent, prices are fair, and their app makes reordering super easy.",
-    rating: 5,
-  },
-  {
-    name: "Anita Desai",
-    role: "Health Enthusiast",
-    initials: "AD",
-    color: "from-amber-500 to-orange-400",
-    content:
-      "The Ayurvedic herbal teas and immune boosters have become a daily essential for my family. We trust Forever Healthcare with our health needs.",
-    rating: 4,
-  },
+const COLORS = [
+  "from-pink-500 to-rose-400",
+  "from-blue-500 to-cyan-400",
+  "from-emerald-500 to-green-400",
+  "from-violet-500 to-purple-400",
+  "from-amber-500 to-orange-400"
 ];
 
-export default function Testimonials() {
+export default function Testimonials({ testimonialsData }: { testimonialsData?: any[] }) {
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(3);
+
+  // Map db data or fallback
+  const fallbackTestimonials = [
+    {
+      name: "Sarah Jenkins",
+      role: "Regular Customer",
+      initials: "SJ",
+      color: "from-pink-500 to-rose-400",
+      content:
+        "Forever Healthcare has completely changed how I manage my family's wellness. The Ayurvedic supplements are top-notch and delivery is always on time. Highly recommended!",
+      rating: 5,
+    }
+  ];
+
+  const processedTestimonials = testimonialsData && testimonialsData.length > 0 
+    ? testimonialsData.map((t, idx) => ({
+        name: t.customerName,
+        role: t.designation ? `${t.designation}${t.company ? ` @ ${t.company}` : ''}` : "Customer",
+        initials: t.customerName ? t.customerName.charAt(0) : "U",
+        color: COLORS[idx % COLORS.length],
+        content: t.review,
+        rating: t.rating || 5,
+      }))
+    : fallbackTestimonials;
 
   useEffect(() => {
     const updatePerPage = () => {
@@ -67,8 +51,8 @@ export default function Testimonials() {
     return () => window.removeEventListener("resize", updatePerPage);
   }, []);
 
-  const totalPages = Math.ceil(testimonials.length / itemsPerPage);
-  const visibleTestimonials = testimonials.slice(
+  const totalPages = Math.ceil(processedTestimonials.length / itemsPerPage);
+  const visibleTestimonials = processedTestimonials.slice(
     currentPage * itemsPerPage,
     currentPage * itemsPerPage + itemsPerPage
   );

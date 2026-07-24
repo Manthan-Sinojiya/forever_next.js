@@ -12,6 +12,7 @@ export interface IProduct extends Document {
   // Pricing & Stock
   mrp: number; // compareAtPrice
   price: number; // salePrice
+  taxType?: "inclusive" | "exclusive";
   gst?: number;
   inventory: number;
   inStock: boolean;
@@ -23,6 +24,11 @@ export interface IProduct extends Document {
     width: number;
     height: number;
   };
+  customShippingEnabled?: boolean;
+  shippingCharges?: {
+    location: string;
+    charge: number;
+  }[];
   
   // CMS Fields (Healthcare specific)
   description?: string;
@@ -76,7 +82,7 @@ const ProductSchema = new Schema<IProduct>(
   {
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
-    sku: { type: String },
+    sku: { type: String, unique: true, sparse: true, uppercase: true, trim: true },
     category: { type: Schema.Types.ObjectId, ref: "Category" },
     subCategory: { type: String },
     brand: { type: Schema.Types.ObjectId, ref: "Brand" },
@@ -84,6 +90,7 @@ const ProductSchema = new Schema<IProduct>(
     
     mrp: { type: Number, required: true },
     price: { type: Number },
+    taxType: { type: String, enum: ["inclusive", "exclusive"], default: "inclusive" },
     gst: { type: Number },
     inventory: { type: Number, default: 0 },
     inStock: { type: Boolean, default: true },
@@ -94,6 +101,13 @@ const ProductSchema = new Schema<IProduct>(
       width: { type: Number },
       height: { type: Number }
     },
+    customShippingEnabled: { type: Boolean, default: false },
+    shippingCharges: [
+      {
+        location: { type: String },
+        charge: { type: Number },
+      }
+    ],
     
     description: { type: String },
     shortDescription: { type: String },

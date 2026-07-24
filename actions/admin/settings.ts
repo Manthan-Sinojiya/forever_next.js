@@ -29,7 +29,7 @@ export async function updateSettings(data: any) {
     const existing = await Setting.findOne();
     
     if (existing) {
-      await Setting.findByIdAndUpdate(existing._id, data, { new: true });
+      await Setting.findByIdAndUpdate(existing._id, data, { returnDocument: 'after' });
     } else {
       const newSettings = new Setting(data);
       await newSettings.save();

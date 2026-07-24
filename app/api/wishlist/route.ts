@@ -2,9 +2,15 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import { Product } from "@/models/Product";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
     await dbConnect();
     const url = new URL(request.url);
     const email = url.searchParams.get("email");
@@ -15,7 +21,7 @@ export async function GET(request: Request) {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+      return NextResponse.json({ success: true, data: [] }, { status: 200 });
     }
 
     const products = await Product.find({ _id: { $in: user.wishlist } });
@@ -28,6 +34,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
     await dbConnect();
     const body = await request.json();
     const { email, productId } = body;

@@ -61,7 +61,7 @@ export async function createCustomPage(data: any) {
 export async function updateCustomPage(id: string, data: any) {
   try {
     await connectDB();
-    const updated = await CustomPage.findByIdAndUpdate(id, data, { new: true });
+    const updated = await CustomPage.findByIdAndUpdate(id, data, { returnDocument: 'after' });
     revalidatePath("/admin/custompages");
     return { success: true, data: updated?._id.toString() };
   } catch (error) {

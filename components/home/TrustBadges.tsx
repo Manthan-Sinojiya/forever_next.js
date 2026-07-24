@@ -30,7 +30,7 @@ const trustPoints = [
   },
 ];
 
-export default function TrustBadges({ title, description }: { title?: string, description?: string }) {
+export default function TrustBadges({ title, description, subtitle, slides }: { title?: string, description?: string, subtitle?: string, slides?: any[] }) {
   return (
     <section className="py-16 bg-[#F8FAFC] relative overflow-hidden border-t border-b border-slate-50">
       {/* Background decorations */}
@@ -42,7 +42,7 @@ export default function TrustBadges({ title, description }: { title?: string, de
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="bg-emerald-50 border border-emerald-100 text-emerald-650 text-emerald-600 px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest">
-            Uncompromising Standards
+            {subtitle || "Uncompromising Standards"}
           </span>
           <h2 className="text-3xl font-extrabold font-heading text-slate-800 leading-tight mt-4">
             {title ? (
@@ -58,9 +58,9 @@ export default function TrustBadges({ title, description }: { title?: string, de
 
         {/* Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {trustPoints.map((item, idx) => (
+          {(slides && slides.length > 0 ? slides : trustPoints).map((item, idx) => (
             <motion.div
-              key={item.title}
+              key={item.title || item.heading}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -68,18 +68,22 @@ export default function TrustBadges({ title, description }: { title?: string, de
               className={`bg-white rounded-3xl border p-6 hover:shadow-xl hover:shadow-slate-100/50 hover:-translate-y-1 transition-all duration-300 group flex flex-col items-center text-center`}
             >
               {/* Icon Container */}
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
-                {item.icon}
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.color || 'from-emerald-500/10 to-teal-500/5'} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 overflow-hidden relative`}>
+                {item.desktopImage ? (
+                  <img src={item.desktopImage} alt={item.heading} className="w-10 h-10 object-contain" />
+                ) : (
+                  item.icon || <Leaf className="w-6 h-6 text-emerald-600" />
+                )}
               </div>
 
               {/* Title */}
               <h3 className="text-base font-black text-slate-800 mb-2 group-hover:text-primary transition-colors">
-                {item.title}
+                {item.title || item.heading}
               </h3>
 
               {/* Description */}
               <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-                {item.desc}
+                {item.desc || item.subheading}
               </p>
             </motion.div>
           ))}

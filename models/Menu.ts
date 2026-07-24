@@ -3,8 +3,11 @@ import mongoose, { Document, Model, Schema } from "mongoose";
 export interface IMenuLink {
   label: string;
   url: string;
+  icon?: string;
   order: number;
   isOpenInNewTab: boolean;
+  isActive: boolean;
+  children?: IMenuLink[];
 }
 
 export interface IMenu extends Document {
@@ -14,17 +17,21 @@ export interface IMenu extends Document {
   updatedAt: Date;
 }
 
+const MenuLinkSchema = new Schema<IMenuLink>();
+MenuLinkSchema.add({
+  label: { type: String, required: true },
+  url: { type: String, required: true },
+  icon: { type: String },
+  order: { type: Number, default: 0 },
+  isOpenInNewTab: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
+  children: [MenuLinkSchema]
+});
+
 const MenuSchema = new Schema<IMenu>(
   {
     name: { type: String, required: true, unique: true },
-    links: [
-      {
-        label: { type: String, required: true },
-        url: { type: String, required: true },
-        order: { type: Number, default: 0 },
-        isOpenInNewTab: { type: Boolean, default: false },
-      },
-    ],
+    links: [MenuLinkSchema],
   },
   { timestamps: true }
 );

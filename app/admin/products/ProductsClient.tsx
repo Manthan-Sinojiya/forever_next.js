@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from "next/navigation";
 import { DataTable } from "@/components/admin/DataTable";
 import { deleteProduct } from "@/actions/admin/products";
+import toast from "react-hot-toast";
 
 export default function ProductsClient({ initialData, totalPages, initialPage, initialSearch }: any) {
   const router = useRouter();
@@ -23,7 +24,6 @@ export default function ProductsClient({ initialData, totalPages, initialPage, i
           </div>
           <div>
             <div className="font-semibold text-slate-900">{row.name}</div>
-            <div className="text-xs text-slate-500 font-medium">{row.sku || "No SKU"}</div>
           </div>
         </div>
       )
@@ -59,11 +59,36 @@ export default function ProductsClient({ initialData, totalPages, initialPage, i
     },
   ];
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      await deleteProduct(id);
-      router.refresh();
-    }
+  const handleDelete = (id: string) => {
+    toast((t) => (
+      <div>
+        <p className="font-medium mb-3">Are you sure you want to delete this product?</p>
+        <div className="flex gap-2 justify-end">
+          <button 
+            className="px-3 py-1.5 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancel
+          </button>
+          <button 
+            className="px-3 py-1.5 bg-rose-600 text-white text-sm font-medium rounded-lg hover:bg-rose-700 transition-colors"
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const loadingToast = toast.loading("Deleting product...");
+              try {
+                await deleteProduct(id);
+                toast.success("Product deleted successfully", { id: loadingToast });
+                router.refresh();
+              } catch (error) {
+                toast.error("Failed to delete product", { id: loadingToast });
+              }
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: Infinity });
   };
 
   return (

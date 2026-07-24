@@ -38,7 +38,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, error: "Missing review ID or status." }, { status: 400 });
     }
 
-    const review = await Review.findByIdAndUpdate(id, { status }, { new: true });
+    const review = await Review.findByIdAndUpdate(id, { status }, { returnDocument: 'after' });
     if (!review) {
       return NextResponse.json({ success: false, error: "Review not found." }, { status: 404 });
     }

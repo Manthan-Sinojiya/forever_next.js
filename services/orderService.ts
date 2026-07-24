@@ -38,7 +38,7 @@ export async function updateOrder(id: string, data: Partial<IOrder>) {
     throw new Error("Invalid order ID");
   }
   
-  const updatedOrder = await Order.findByIdAndUpdate(id, data, { new: true });
+  const updatedOrder = await Order.findByIdAndUpdate(id, data, { returnDocument: 'after' });
   
   if (updatedOrder && data.orderStatus) {
     // Asynchronously send status update email

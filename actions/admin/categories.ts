@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { Category } from "@/models/Category";
+import Product from "@/models/Product";
 import connectDB from "@/lib/mongodb";
 
 export async function getCategories(search?: string, page: number = 1, limit: number = 10) {
@@ -16,7 +17,15 @@ export async function getCategories(search?: string, page: number = 1, limit: nu
       .limit(limit)
       .lean();
       
-    const serialized = JSON.parse(JSON.stringify(categories));
+    // Fetch product counts for each category
+    const categoriesWithCounts = await Promise.all(
+      categories.map(async (cat: any) => {
+        const productsCount = await Product.countDocuments({ category: cat._id });
+        return { ...cat, productsCount };
+      })
+    );
+      
+    const serialized = JSON.parse(JSON.stringify(categoriesWithCounts));
 
     return {
       success: true,
@@ -52,8 +61,12 @@ export async function createCategory(data: any) {
     await newCategory.save();
     revalidatePath("/admin/categories");
     return { success: true, data: newCategory._id.toString() };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating category:", error);
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return { success: false, error: `A category with this ${field} already exists.` };
+    }
     return { success: false, error: "Failed to create category" };
   }
 }
@@ -61,11 +74,15 @@ export async function createCategory(data: any) {
 export async function updateCategory(id: string, data: any) {
   try {
     await connectDB();
-    const updated = await Category.findByIdAndUpdate(id, data, { new: true });
+    const updated = await Category.findByIdAndUpdate(id, data, { returnDocument: 'after' });
     revalidatePath("/admin/categories");
     return { success: true, data: updated?._id.toString() };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating category:", error);
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return { success: false, error: `A category with this ${field} already exists.` };
+    }
     return { success: false, error: "Failed to update category" };
   }
 }
@@ -73,6 +90,10 @@ export async function updateCategory(id: string, data: any) {
 export async function deleteCategory(id: string) {
   try {
     await connectDB();
+    const productsCount = await Product.countDocuments({ category: id });
+    if (productsCount > 0) {
+      return { success: false, error: `Cannot delete category. It has ${productsCount} products assigned to it.` };
+    }
     await Category.findByIdAndDelete(id);
     revalidatePath("/admin/categories");
     return { success: true };

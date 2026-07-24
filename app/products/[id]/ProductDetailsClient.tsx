@@ -25,6 +25,7 @@ interface Product {
   _id: string;
   name: string;
   description: string;
+  shortDescription?: string;
   price: number;
   category: string;
   imageUrl: string;
@@ -83,7 +84,7 @@ function getHoverImageUrl(product: Product): string {
     }
   }
 
-  return "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?q=80&w=600&auto=format&fit=crop";
+  return url;
 }
 
 function getCategoryDetails(category: string) {
@@ -366,10 +367,9 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
     ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
     : 0;
 
-  const hoverImg = getHoverImageUrl(product);
   const gallery = product.imageGallery && product.imageGallery.length > 0 
     ? [product.imageUrl, ...product.imageGallery] 
-    : [product.imageUrl, hoverImg];
+    : [product.imageUrl];
   const catTheme = getCategoryColorTheme(product.category);
   const catDetails = getCategoryDetails(product.category);
   const sku = getProductSKU(product);
@@ -520,7 +520,7 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
 
               {/* Short Description */}
               <p className="text-sm text-slate-500 font-semibold leading-relaxed mb-6">
-                {product.description || "Premium certified product sourced directly from natural, authentic manufacturers. Tested for quality and potency to support healthy lifestyles."}
+                {product.shortDescription || "Premium certified product sourced directly from natural, authentic manufacturers. Tested for quality and potency to support healthy lifestyles."}
               </p>
 
               {/* Highlights/Badges */}
@@ -650,9 +650,10 @@ export default function ProductDetailsClient({ product }: { product: Product }) 
                   <div className="space-y-10">
                     <div>
                       <h3 className="font-heading font-black text-xl text-slate-800 mb-4">About {product.name}</h3>
-                      <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                        {product.description}
-                      </p>
+                      <div 
+                        className="text-sm text-slate-600 leading-relaxed font-medium prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ __html: product.description }}
+                      />
                     </div>
 
                     {product.benefits && (

@@ -62,7 +62,7 @@ export async function createProduct(data: any) {
 export async function updateProduct(id: string, data: any) {
   try {
     await connectDB();
-    const updatedProduct = await Product.findByIdAndUpdate(id, data, { new: true });
+    const updatedProduct = await Product.findByIdAndUpdate(id, data, { returnDocument: 'after' });
     revalidatePath("/admin/products");
     return { success: true, data: updatedProduct?._id.toString() };
   } catch (error) {

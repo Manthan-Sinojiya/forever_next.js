@@ -64,7 +64,7 @@ export async function createMenu(data: any) {
 export async function updateMenu(id: string, data: any) {
   try {
     await connectDB();
-    const updated = await Menu.findByIdAndUpdate(id, data, { new: true });
+    const updated = await Menu.findByIdAndUpdate(id, data, { returnDocument: 'after' });
     revalidatePath("/admin/navigation");
     return { success: true, data: updated?._id.toString() };
   } catch (error) {

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createCategory } from "@/actions/admin/categories";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import toast from "react-hot-toast";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -41,12 +42,15 @@ export default function NewCategoryPage() {
       const payload = { ...data, image };
       const res = await createCategory(payload);
       if (res.success) {
+        toast.success("Category created successfully!");
         router.push("/admin/categories");
       } else {
         setError(res.error || "Failed to create category");
+        toast.error(res.error || "Failed to create category");
       }
     } catch {
       setError("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -106,12 +110,12 @@ export default function NewCategoryPage() {
               <input {...register("metaTitle")} className="w-full border border-gray-300 rounded p-2" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Meta Keywords</label>
-              <input {...register("metaKeywords")} placeholder="e.g. natural, ayurveda..." className="w-full border border-gray-300 rounded p-2" />
-            </div>
-            <div>
               <label className="block text-sm font-medium mb-1">Meta Description</label>
               <textarea {...register("metaDescription")} rows={3} className="w-full border border-gray-300 rounded p-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Meta Keywords</label>
+              <input {...register("metaKeywords")} placeholder="e.g. natural, ayurveda..." className="w-full border border-gray-300 rounded p-2" />
             </div>
           </div>
         </div>

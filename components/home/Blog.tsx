@@ -15,37 +15,31 @@ interface BlogPost {
   excerpt: string;
 }
 
-const BLOG_POSTS: BlogPost[] = [
-  {
-    id: "post-1",
-    title: "5 Ayurvedic Herbs for Relieving Stress & Fatigue",
-    category: "Ayurveda",
-    imageUrl: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80",
-    date: "July 14, 2026",
-    readTime: "5 Min Read",
-    excerpt: "Discover how ancient adaptogens like Ashwagandha and Brahmi can restore energy levels, calm the mind, and balance your body naturally.",
-  },
-  {
-    id: "post-2",
-    title: "How to Correctly Measure Blood Pressure at Home",
-    category: "Home Care",
-    imageUrl: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=600&q=80",
-    date: "July 12, 2026",
-    readTime: "4 Min Read",
-    excerpt: "Avoid common errors when tracking your blood pressure. Learn the step-by-step method to get medical-grade accuracy every single time.",
-  },
-  {
-    id: "post-3",
-    title: "Why Natural Vitamin C & Zinc Are Key for Immunity",
-    category: "Nutrition",
-    imageUrl: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=600&q=80",
-    date: "July 10, 2026",
-    readTime: "6 Min Read",
-    excerpt: "Why are natural dietary sources superior to synthetic vitamins? Explore the biological absorption benefits of organic supplements.",
-  },
-];
+export default function Blog({ title, blogData, subtitle, description }: { title?: string; blogData?: any[]; subtitle?: string; description?: string }) {
+  const fallbackBlogs: BlogPost[] = [
+    {
+      id: "post-1",
+      title: "5 Ayurvedic Herbs for Relieving Stress & Fatigue",
+      category: "Ayurveda",
+      imageUrl: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80",
+      date: "July 14, 2026",
+      readTime: "5 Min Read",
+      excerpt: "Discover how ancient adaptogens like Ashwagandha and Brahmi can restore energy levels, calm the mind, and balance your body naturally.",
+    }
+  ];
 
-export default function Blog({ title }: { title?: string }) {
+  const processedBlogs: BlogPost[] = blogData && blogData.length > 0 
+    ? blogData.map((b) => ({
+        id: b.slug || b._id,
+        title: b.title,
+        category: b.category || "Wellness",
+        imageUrl: b.featuredImage || fallbackBlogs[0].imageUrl,
+        date: new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        readTime: "4 Min Read",
+        excerpt: b.excerpt || b.content.substring(0, 120).replace(/<[^>]+>/g, '') + "...",
+      }))
+    : fallbackBlogs;
+
   return (
     <section className="section-padding bg-white relative overflow-hidden">
       {/* Background decorations */}
@@ -58,7 +52,7 @@ export default function Blog({ title }: { title?: string }) {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs font-semibold mb-3">
               <BookOpen className="w-3.5 h-3.5" />
-              Latest Insights
+              {subtitle || "Latest Insights"}
             </div>
             <h2 className="text-3xl lg:text-4xl font-extrabold font-heading text-slate-800">
               {title ? (
@@ -68,7 +62,7 @@ export default function Blog({ title }: { title?: string }) {
               )}
             </h2>
             <p className="text-muted text-sm mt-2 max-w-xl">
-              Read our curated collection of health guides written by certified healthcare and Ayurvedic experts.
+              {description || "Read our curated collection of health guides written by certified healthcare and Ayurvedic experts."}
             </p>
           </div>
           <Link
@@ -82,7 +76,7 @@ export default function Blog({ title }: { title?: string }) {
 
         {/* Blog Post Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {BLOG_POSTS.map((post, idx) => (
+          {processedBlogs.slice(0, 3).map((post, idx) => (
             <Link key={post.id} href={`/blog/${post.id}`} className="block group">
               <motion.article
                 initial={{ opacity: 0, y: 20 }}

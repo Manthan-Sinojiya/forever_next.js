@@ -20,6 +20,7 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   exportFilename?: string;
   onAdd?: () => void;
+  onEdit?: (row: T) => void;
 }
 
 export function DataTable<T extends { _id?: string; id?: string }>({
@@ -30,7 +31,8 @@ export function DataTable<T extends { _id?: string; id?: string }>({
   createHref,
   searchPlaceholder = "Search...",
   exportFilename = "export.csv",
-  onAdd
+  onAdd,
+  onEdit
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -187,6 +189,15 @@ export function DataTable<T extends { _id?: string; id?: string }>({
                             >
                               <Edit className="w-4 h-4" />
                             </Link>
+                          )}
+                          {onEdit && (
+                            <button 
+                              onClick={() => onEdit(row)}
+                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
                           )}
                           {onDelete && (
                             <button 

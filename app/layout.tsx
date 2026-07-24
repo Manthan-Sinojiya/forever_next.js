@@ -7,6 +7,7 @@ import CartDrawer from "@/components/layout/CartDrawer";
 import ToastContainer from "@/components/layout/ToastContainer";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
 import Providers from "./providers";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -103,6 +104,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${inter.variable} ${poppins.variable} ${manrope.variable} h-full antialiased`}
     >
       <head>
@@ -146,6 +148,7 @@ export default function RootLayout({
             {children}
             <CartDrawer />
             <ToastContainer />
+            <Toaster position="top-right" />
             <WhatsAppButton />
           </SessionProvider>
         </Providers>

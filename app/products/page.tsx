@@ -13,10 +13,16 @@ export const metadata: Metadata = {
 
 export default async function ProductsPage() {
   await dbConnect();
-  const rawProducts = await Product.find({}).lean();
+  const rawProducts = await Product.find({}).populate("category").lean();
+  
+  // Format the products so the category is just a string (the category name), as expected by ProductCard
+  const formattedProducts = rawProducts.map((p: any) => ({
+    ...p,
+    category: p.category ? p.category.name : undefined,
+  }));
   
   // Serialize Mongo documents so they are safe to pass to client component
-  const products = JSON.parse(JSON.stringify(rawProducts));
+  const products = JSON.parse(JSON.stringify(formattedProducts));
 
   return (
     <>

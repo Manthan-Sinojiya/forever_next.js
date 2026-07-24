@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import connectDB from "@/lib/mongodb";
+import Setting from "@/models/Setting";
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +20,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    await connectDB();
+    const settings = await Setting.findOne();
+    const dbRazorpay = settings?.razorpay;
+
+    const keySecret = dbRazorpay?.enabled && dbRazorpay?.keySecret ? dbRazorpay.keySecret : process.env.RAZORPAY_KEY_SECRET;
     if (!keySecret) {
       // In case keys are missing but client attempted verification
       return NextResponse.json(

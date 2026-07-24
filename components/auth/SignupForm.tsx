@@ -3,23 +3,41 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, User, Phone, MapPin, Loader2, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const signupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  phone: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+});
+
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupForm() {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const { register, handleSubmit, formState: { errors } } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      phone: "",
+      city: "",
+      state: "",
+    }
+  });
+
+  const onSubmit = async (data: SignupFormValues) => {
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -28,22 +46,15 @@ export default function SignupForm() {
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, phone, city, state }),
+        body: JSON.stringify(data),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Something went wrong. Please try again.");
+      const responseData = await res.json();
+      if (!res.ok || !responseData.success) {
+        throw new Error(responseData.error || "Something went wrong. Please try again.");
       }
 
       setSuccess(true);
-      // Clean up fields
-      setName("");
-      setEmail("");
-      setPassword("");
-      setPhone("");
-      setCity("");
-      setState("");
 
       setTimeout(() => {
         router.push("/login");
@@ -56,7 +67,7 @@ export default function SignupForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-medium p-3.5 rounded-2xl flex items-center gap-2.5 animate-pulse-slow">
           <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
@@ -81,14 +92,12 @@ export default function SignupForm() {
             <User className="h-4.5 w-4.5" />
           </div>
           <input
-            type="text"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-slate-50/70 border border-slate-200/80 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all duration-300 text-sm font-medium"
+            {...register("name")}
+            className={`w-full pl-11 pr-4 py-2.5 rounded-2xl bg-slate-50/70 border ${errors.name ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-200/80 focus:border-primary focus:ring-4 focus:ring-primary/10'} focus:bg-white outline-none transition-all duration-300 text-sm font-medium`}
             placeholder="John Doe"
           />
         </div>
+        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
       </div>
 
       {/* Email Address */}
@@ -102,13 +111,12 @@ export default function SignupForm() {
           </div>
           <input
             type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-slate-50/70 border border-slate-200/80 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all duration-300 text-sm font-medium"
+            {...register("email")}
+            className={`w-full pl-11 pr-4 py-2.5 rounded-2xl bg-slate-50/70 border ${errors.email ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-200/80 focus:border-primary focus:ring-4 focus:ring-primary/10'} focus:bg-white outline-none transition-all duration-300 text-sm font-medium`}
             placeholder="name@example.com"
           />
         </div>
+        {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
       </div>
 
       {/* Password and Phone side-by-side on sm+ */}
@@ -124,11 +132,8 @@ export default function SignupForm() {
             </div>
             <input
               type={showPassword ? "text" : "password"}
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-11 pr-11 py-2.5 rounded-2xl bg-slate-50/70 border border-slate-200/80 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all duration-300 text-sm font-medium"
+              {...register("password")}
+              className={`w-full pl-11 pr-11 py-2.5 rounded-2xl bg-slate-50/70 border ${errors.password ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-200/80 focus:border-primary focus:ring-4 focus:ring-primary/10'} focus:bg-white outline-none transition-all duration-300 text-sm font-medium`}
               placeholder="••••••••"
             />
             <button
@@ -144,6 +149,7 @@ export default function SignupForm() {
               )}
             </button>
           </div>
+          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
         </div>
 
         {/* Phone Number */}
@@ -156,9 +162,7 @@ export default function SignupForm() {
               <Phone className="h-4.5 w-4.5" />
             </div>
             <input
-              type="text"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              {...register("phone")}
               className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-slate-50/70 border border-slate-200/80 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all duration-300 text-sm font-medium"
               placeholder="+91 XXXXX XXXXX"
             />
@@ -178,9 +182,7 @@ export default function SignupForm() {
               <MapPin className="h-4.5 w-4.5" />
             </div>
             <input
-              type="text"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
+              {...register("city")}
               className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-slate-50/70 border border-slate-200/80 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all duration-300 text-sm font-medium"
               placeholder="Mumbai"
             />
@@ -197,9 +199,7 @@ export default function SignupForm() {
               <MapPin className="h-4.5 w-4.5" />
             </div>
             <input
-              type="text"
-              value={state}
-              onChange={(e) => setState(e.target.value)}
+              {...register("state")}
               className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-slate-50/70 border border-slate-200/80 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all duration-300 text-sm font-medium"
               placeholder="Maharashtra"
             />
@@ -228,4 +228,3 @@ export default function SignupForm() {
     </form>
   );
 }
-

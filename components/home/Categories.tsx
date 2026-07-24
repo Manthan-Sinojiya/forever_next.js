@@ -6,59 +6,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { Leaf, ArrowRight, Pill, ShoppingBag, Briefcase } from "lucide-react";
 
-const categories = [
-  {
-    title: "Food Supplements",
-    description: "Vitamins, minerals & nutritional support for everyday vitality",
-    productImage: "/categories/food-supplements.png",
-    alternateProductImage: "/categories/food-supplements.png",
-    color: "from-emerald-500 to-green-400",
-    glowColor: "group-hover:shadow-emerald-500/10 group-hover:border-emerald-500/20",
-    bgLight: "bg-[#EAF6F0] text-[#10B981]",
-    textColor: "text-[#10B981]",
-    headerBg: "bg-[#EAF6F0]",
-    count: "2 PRODUCTS",
-    index: "01"
-  },
-  {
-    title: "Healthcare Equipments",
-    description: "Smart medical devices & health monitoring equipment",
-    productImage: "/categories/healthcare.png",
-    alternateProductImage: "/categories/healthcare.png",
-    color: "from-blue-500 to-cyan-400",
-    glowColor: "group-hover:shadow-blue-500/10 group-hover:border-blue-500/20",
-    bgLight: "bg-[#EBF3FC] text-[#2563EB]",
-    textColor: "text-[#2563EB]",
-    headerBg: "bg-[#EBF4FC]",
-    count: "4 PRODUCTS",
-    index: "02"
-  },
-  {
-    title: "Men Health",
-    description: "Vitality, energy & wellness products for men",
-    productImage: "/categories/men-health.png",
-    alternateProductImage: "/categories/men-health.png",
-    color: "from-emerald-500 to-teal-400",
-    glowColor: "group-hover:shadow-emerald-500/10 group-hover:border-emerald-500/20",
-    bgLight: "bg-[#EAF7F2] text-[#059669]",
-    textColor: "text-[#059669]",
-    headerBg: "bg-[#EAF7F2]",
-    count: "1 PRODUCT",
-    index: "03"
-  },
-  {
-    title: "Personal Care",
-    description: "Premium hygiene, grooming & beauty essentials",
-    productImage: "/categories/personal-care.png",
-    alternateProductImage: "/categories/personal-care.png",
-    color: "from-purple-500 to-violet-400",
-    glowColor: "group-hover:shadow-purple-500/10 group-hover:border-purple-500/20",
-    bgLight: "bg-[#F4EDFB] text-[#7C3AED]",
-    textColor: "text-[#7C3AED]",
-    headerBg: "bg-[#F4EDFB]",
-    count: "150+ PRODUCTS",
-    index: "04"
-  },
+// Colors map for dynamic styling based on index
+const styleMap = [
+  { color: "from-emerald-500 to-green-400", bgLight: "bg-[#EAF6F0] text-[#10B981]", textColor: "text-[#10B981]", headerBg: "bg-[#EAF6F0]" },
+  { color: "from-blue-500 to-cyan-400", bgLight: "bg-[#EBF3FC] text-[#2563EB]", textColor: "text-[#2563EB]", headerBg: "bg-[#EBF4FC]" },
+  { color: "from-emerald-500 to-teal-400", bgLight: "bg-[#EAF7F2] text-[#059669]", textColor: "text-[#059669]", headerBg: "bg-[#EAF7F2]" },
+  { color: "from-purple-500 to-violet-400", bgLight: "bg-[#F4EDFB] text-[#7C3AED]", textColor: "text-[#7C3AED]", headerBg: "bg-[#F4EDFB]" },
 ];
 
 const containerVariants = {
@@ -89,7 +42,8 @@ const getCategoryBadgeIcon = (title: string, textColor: string) => {
   }
 };
 
-export default function Categories({ title, limit }: { title?: string, limit?: number }) {
+export default function Categories({ title, limit, subtitle, description }: { title?: string, limit?: number, subtitle?: string, description?: string }) {
+  const [categories, setCategories] = useState<any[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   // Typewriter loop states
@@ -137,18 +91,61 @@ export default function Categories({ title, limit }: { title?: string, limit?: n
     : "";
 
   useEffect(() => {
-    async function fetchCounts() {
+    async function fetchData() {
       try {
-        const res = await fetch("/api/products/counts");
-        const json = await res.json();
-        if (json.success && json.counts) {
-          setCounts(json.counts);
+        const cachedCounts = sessionStorage.getItem("home_counts");
+        let countsData = cachedCounts ? JSON.parse(cachedCounts) : null;
+        
+        let shouldFetchCounts = !countsData;
+        let countsRes = null;
+        
+        if (shouldFetchCounts) {
+          countsRes = await fetch("/api/products/counts").catch(() => null);
+          if (countsRes) {
+            const json = await countsRes.json();
+            if (json.success && json.counts) {
+              setCounts(json.counts);
+              sessionStorage.setItem("home_counts", JSON.stringify(json.counts));
+            }
+          }
+        } else {
+          setCounts(countsData);
+        }
+
+        const cachedCats = sessionStorage.getItem("home_categories");
+        let catsData = cachedCats ? JSON.parse(cachedCats) : null;
+        
+        let shouldFetchCats = !catsData;
+        let catRes = null;
+
+        if (shouldFetchCats) {
+          catRes = await fetch("/api/categories").catch(() => null);
+          if (catRes) {
+            const json = await catRes.json();
+            if (json.success && json.data) {
+              const mapped = json.data.map((c: any, i: number) => {
+                const style = styleMap[i % styleMap.length];
+                return {
+                  title: c.name,
+                  slug: c.slug,
+                  description: c.description || "Discover our amazing products.",
+                  productImage: c.image || `/categories/${c.slug}.png`,
+                  index: `0${i + 1}`.slice(-2),
+                  ...style
+                };
+              });
+              setCategories(mapped);
+              sessionStorage.setItem("home_categories", JSON.stringify(mapped));
+            }
+          }
+        } else {
+          setCategories(catsData);
         }
       } catch (err) {
-        console.error("Failed to fetch category counts:", err);
+        console.error("Failed to fetch data:", err);
       }
     }
-    fetchCounts();
+    fetchData();
   }, []);
 
 
@@ -168,7 +165,7 @@ export default function Categories({ title, limit }: { title?: string, limit?: n
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E8F5EE] border border-emerald-100/50 text-[#10B981] text-[10px] font-black uppercase tracking-widest mb-4"
           >
             <Leaf className="w-3.5 h-3.5 fill-[#10B981]/20" />
-            Explore Categories
+            {subtitle || "Explore Categories"}
           </motion.div>
           
           <h2 className="text-3.5xl md:text-5xl font-black font-heading text-slate-800 leading-tight mb-4 tracking-tight min-h-[3rem] md:min-h-[3.75rem] flex items-center justify-center flex-wrap gap-x-2">
@@ -198,7 +195,7 @@ export default function Categories({ title, limit }: { title?: string, limit?: n
             transition={{ delay: 0.2 }}
             className="text-sm md:text-base text-slate-500 max-w-xl mx-auto leading-relaxed"
           >
-            Browse our curated categories to find exactly what your body needs.
+            {description || "Browse our curated categories to find exactly what your body needs."}
           </motion.p>
         </div>
 
@@ -213,7 +210,7 @@ export default function Categories({ title, limit }: { title?: string, limit?: n
           {categories.slice(0, limit || categories.length).map((category) => (
             <motion.div key={category.title} variants={itemVariants}>
               <Link
-                href={`/categories/${category.title.toLowerCase().replace(/ /g, "-")}`}
+                href={`/categories/${category.slug || category.title.toLowerCase().replace(/ /g, "-")}`}
                 className="group block h-full cursor-pointer"
               >
                 <div className="relative h-full bg-white rounded-[2rem] border border-slate-100 shadow-sm transition-all duration-500 ease-out hover:shadow-md group-hover:-translate-y-2 overflow-hidden flex flex-col justify-between">

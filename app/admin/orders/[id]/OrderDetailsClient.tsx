@@ -119,19 +119,19 @@ export default function OrderDetailsClient({ initialData }: { initialData: any }
               <div className="w-full sm:w-1/2 ml-auto space-y-3">
                 <div className="flex justify-between text-sm font-medium text-slate-600">
                   <span>Subtotal</span>
-                  <span className="text-slate-900">₹{(initialData.subtotal || initialData.total).toLocaleString()}</span>
+                  <span className="text-slate-900">₹{Number(initialData.subtotal || initialData.total || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm font-medium text-slate-600">
                   <span>Shipping</span>
-                  <span className="text-slate-900">₹{(initialData.shippingFee || 0).toLocaleString()}</span>
+                  <span className="text-slate-900">₹{Number(initialData.shippingFee || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm font-medium text-slate-600">
                   <span>Tax</span>
-                  <span className="text-slate-900">₹{(initialData.tax || 0).toLocaleString()}</span>
+                  <span className="text-slate-900">₹{Number(initialData.tax || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between font-bold text-slate-900 text-lg pt-4 border-t border-slate-200 mt-2">
                   <span>Total</span>
-                  <span className="text-indigo-600">₹{(initialData.total || 0).toLocaleString()}</span>
+                  <span className="text-indigo-600">₹{Number(initialData.total || 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>

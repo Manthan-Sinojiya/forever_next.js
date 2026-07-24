@@ -9,6 +9,7 @@ import { createProduct } from "@/actions/admin/products";
 import dynamic from "next/dynamic";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { Plus, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
@@ -23,9 +24,17 @@ const productSchema = z.object({
   // Pricing & Stock
   mrp: z.number().min(0, "MRP must be non-negative"),
   price: z.number().optional(),
+  taxType: z.enum(["inclusive", "exclusive"]).optional(),
   gst: z.number().optional(),
   inventory: z.number().min(0, "Inventory must be non-negative"),
   inStock: z.boolean().optional(),
+  customShippingEnabled: z.boolean().optional(),
+  shippingCharges: z.array(
+    z.object({
+      location: z.string().min(1, "Location is required"),
+      charge: z.number().min(0, "Charge must be non-negative")
+    })
+  ).optional(),
   
   // Physical
   weight: z.string().optional(),
@@ -57,7 +66,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 const tabs = [
   "General",
   "Media",
-  "Pricing & Inventory",
+  "Pricing, Inventory & Delivery",
   "Content & Details",
   "Healthcare Specific"
 ];
@@ -137,17 +146,24 @@ export default function NewProductPage() {
         ingredients: ingredientsContent,
         benefits: benefitsContent,
         howToUse: howToUseContent,
-        images: images.filter(img => img.url !== "")
+        images: images.filter(img => img.url !== ""),
+        taxType: data.taxType || "inclusive",
+        gst: (data.taxType === "exclusive") ? data.gst : undefined,
+        customShippingEnabled: data.customShippingEnabled || false,
+        shippingCharges: data.customShippingEnabled ? data.shippingCharges || [] : [],
       };
       
       const res = await createProduct(payload);
       if (res.success) {
+        toast.success("Product created successfully!");
         router.push("/admin/products");
       } else {
         setError(res.error || "Failed to create product");
+        toast.error(res.error || "Failed to create product");
       }
     } catch {
       setError("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -309,19 +325,19 @@ export default function NewProductPage() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Meta Keywords</label>
-                        <input 
-                          {...register("metaKeywords")} 
-                          placeholder="ayurveda, health, natural..."
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Meta Description</label>
+                        <textarea 
+                          {...register("metaDescription")} 
+                          rows={3}
                           className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
                         />
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Meta Description</label>
-                        <textarea 
-                          {...register("metaDescription")} 
-                          rows={3}
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Meta Keywords</label>
+                        <input 
+                          {...register("metaKeywords")} 
+                          placeholder="ayurveda, health, natural..."
                           className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
                         />
                       </div>
@@ -439,9 +455,9 @@ export default function NewProductPage() {
                 </div>
               )}
 
-              {activeTab === "Pricing & Inventory" && (
+              {activeTab === "Pricing, Inventory & Delivery" && (
                 <div className="space-y-6">
-                  <h3 className="text-sm font-semibold text-slate-800 mb-4">Pricing & Inventory</h3>
+                  <h3 className="text-sm font-semibold text-slate-800 mb-4">Pricing</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">MRP (₹) *</label>
@@ -465,7 +481,31 @@ export default function NewProductPage() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Tax Setup</label>
+                      <select 
+                        {...register("taxType")} 
+                        className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow bg-white"
+                      >
+                        <option value="inclusive">Taxes are included in prices</option>
+                        <option value="exclusive">Add tax (GST) separately</option>
+                      </select>
+                    </div>
+                    {watch("taxType") === "exclusive" && (
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">GST (%)</label>
+                        <input 
+                          type="number" 
+                          {...register("gst", { valueAsNumber: true })} 
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <h3 className="text-sm font-semibold text-slate-800 mt-8 mb-4 border-t border-slate-200 pt-6">Inventory</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">SKU</label>
                       <input 
@@ -482,14 +522,80 @@ export default function NewProductPage() {
                       />
                       {errors.inventory && <p className="text-red-500 text-xs mt-1">{errors.inventory.message}</p>}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">GST (%)</label>
-                      <input 
-                        type="number" 
-                        {...register("gst", { valueAsNumber: true })} 
-                        className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
-                      />
+                  </div>
+
+                  <h3 className="text-sm font-semibold text-slate-800 mt-8 mb-4 border-t border-slate-200 pt-6">Delivery & Shipping</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-md border border-slate-200">
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">Custom Shipping Rates</p>
+                        <p className="text-xs text-slate-500">Configure specific shipping charges for this product per location.</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer"
+                          checked={watch("customShippingEnabled")}
+                          onChange={(e) => {
+                            const val = e.target.checked;
+                            setValue("customShippingEnabled", val);
+                            if (val && (!watch("shippingCharges") || watch("shippingCharges")?.length === 0)) {
+                              setValue("shippingCharges", [{ location: "", charge: 0 }]);
+                            }
+                          }}
+                        />
+                        <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                      </label>
                     </div>
+
+                    {watch("customShippingEnabled") && (
+                      <div className="border border-slate-200 rounded-lg p-4 space-y-4 bg-white">
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="text-sm font-semibold text-slate-700">Location Rates</h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const existing = watch("shippingCharges") || [];
+                              setValue("shippingCharges", [...existing, { location: "", charge: 0 }]);
+                            }}
+                            className="text-xs font-semibold text-emerald-600 flex items-center gap-1 hover:text-emerald-700"
+                          >
+                            <Plus className="w-3 h-3" /> Add Location
+                          </button>
+                        </div>
+                        {(watch("shippingCharges") || []).map((chargeObj, index) => (
+                          <div key={index} className="flex gap-4 items-end bg-slate-50 p-3 rounded-md border border-slate-200">
+                            <div className="flex-1">
+                              <label className="block text-xs font-medium text-slate-500 mb-1">State / City / Pincode</label>
+                              <input 
+                                {...register(`shippingCharges.${index}.location` as const)}
+                                placeholder="e.g. Maharashtra or 400001"
+                                className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                              />
+                            </div>
+                            <div className="w-32">
+                              <label className="block text-xs font-medium text-slate-500 mb-1">Charge (₹)</label>
+                              <input 
+                                type="number"
+                                {...register(`shippingCharges.${index}.charge` as const, { valueAsNumber: true })}
+                                className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const current = watch("shippingCharges") || [];
+                                current.splice(index, 1);
+                                setValue("shippingCharges", current);
+                              }}
+                              className="text-red-500 bg-white p-2 rounded shadow-sm border border-red-100 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { DataTable } from "@/components/ui/data-table";
-import { deleteFaq, createFaq } from "@/actions/admin/faqs";
+import { deleteFaq, createFaq, updateFaq } from "@/actions/admin/faqs";
 import { X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +22,7 @@ export default function FaqsClient({ initialData, totalPages, initialPage, initi
   const pathname = usePathname();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -55,10 +56,30 @@ export default function FaqsClient({ initialData, totalPages, initialPage, initi
     }
   };
 
+  const handleEdit = (row: any) => {
+    setEditingId(row._id);
+    reset({
+      question: row.question,
+      answer: row.answer,
+      category: row.category,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenAdd = () => {
+    setEditingId(null);
+    reset({ question: "", answer: "", category: "" });
+    setIsModalOpen(true);
+  };
+
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      await createFaq({ ...data, order: 0 } as any);
+      if (editingId) {
+        await updateFaq(editingId, data);
+      } else {
+        await createFaq({ ...data, order: 0 } as any);
+      }
       setIsModalOpen(false);
       reset();
       router.refresh();
@@ -76,7 +97,8 @@ export default function FaqsClient({ initialData, totalPages, initialPage, initi
         columns={columns}
         data={initialData}
         pageCount={totalPages}
-        onAdd={() => setIsModalOpen(true)}
+        onAdd={handleOpenAdd}
+        onEdit={handleEdit}
         onDelete={handleDelete}
         onGlobalFilterChange={handleGlobalFilterChange}
         onPaginationChange={handlePaginationChange}

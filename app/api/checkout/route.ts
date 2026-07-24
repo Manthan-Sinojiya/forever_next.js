@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
+import connectDB from "@/lib/mongodb";
+import Setting from "@/models/Setting";
 
 export async function POST(request: Request) {
   try {
@@ -13,10 +15,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    await connectDB();
+    const settings = await Setting.findOne();
+    const dbRazorpay = settings?.razorpay;
 
-    // Fallback to simulation if environment variables are not set
+    // Use DB keys if enabled, else use ENV
+    const keyId = dbRazorpay?.enabled && dbRazorpay?.keyId ? dbRazorpay.keyId : process.env.RAZORPAY_KEY_ID;
+    const keySecret = dbRazorpay?.enabled && dbRazorpay?.keySecret ? dbRazorpay.keySecret : process.env.RAZORPAY_KEY_SECRET;
+
+    // Fallback to simulation if environment variables or settings are not set
     if (!keyId || !keySecret) {
       return NextResponse.json({
         success: true,

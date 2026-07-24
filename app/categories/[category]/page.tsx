@@ -4,6 +4,7 @@ import Footer from "@/components/layout/Footer";
 import ProductsGridClient from "@/components/products/ProductsGridClient";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { getProducts } from "@/services/productService";
 
 const CATEGORY_META: Record<string, {
   title: string;
@@ -134,6 +135,29 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     .slice(0, 5)
     .map((c) => ({ slug: c, ...CATEGORY_META[c] }));
 
+  // Fetch all products on server side to pass to client component
+  let productsData: any[] = [];
+  try {
+    const products = await getProducts({ fetchAll: true });
+    productsData = products.map(p => {
+      const doc = p._doc || p;
+      return {
+        _id: doc._id.toString(),
+        name: doc.name,
+        description: doc.description || doc.shortDescription || "",
+        price: doc.price,
+        originalPrice: doc.originalPrice || doc.mrp,
+        category: doc.category && doc.category.name ? doc.category.name : doc.category,
+        imageUrl: doc.images && doc.images.length > 0 ? doc.images[0].url : "/products/missing-image-test.png",
+        inStock: doc.inStock !== false,
+        featured: doc.isFeatured || doc.isBestSeller || false,
+        rating: doc.rating || 5
+      };
+    });
+  } catch (error) {
+    console.error("Failed to fetch category products", error);
+  }
+
   return (
     <>
       <Navbar />
@@ -184,7 +208,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
         {/* Products Grid */}
         <div className="container mx-auto px-4 py-8">
-          <ProductsGridClient presetCategory={displayName} initialProducts={[]} />
+          <ProductsGridClient presetCategory={displayName} initialProducts={productsData} />
         </div>
       </main>
       <Footer />

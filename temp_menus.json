@@ -1,0 +1,128 @@
+[
+  {
+    "_id": "6a6201cde60562000c4efa37",
+    "name": "Main Header",
+    "links": [
+      {
+        "_id": "6a6201cde60562000c4efa38",
+        "label": "Home",
+        "url": "/",
+        "order": 1,
+        "isOpenInNewTab": false,
+        "isActive": true,
+        "children": []
+      },
+      {
+        "_id": "6a6201cde60562000c4efa39",
+        "label": "Products",
+        "url": "/products",
+        "order": 2,
+        "isOpenInNewTab": false,
+        "isActive": true,
+        "children": []
+      },
+      {
+        "_id": "6a6201cde60562000c4efa3a",
+        "label": "About",
+        "url": "/about",
+        "order": 3,
+        "isOpenInNewTab": false,
+        "isActive": true,
+        "children": []
+      },
+      {
+        "_id": "6a6201cde60562000c4efa3b",
+        "label": "Contact",
+        "url": "/contact",
+        "order": 4,
+        "isOpenInNewTab": false,
+        "isActive": true,
+        "children": []
+      }
+    ],
+    "__v": 0,
+    "createdAt": "2026-07-23T11:58:05.382Z",
+    "updatedAt": "2026-07-23T11:58:05.382Z"
+  },
+  {
+    "_id": "6a6201cde60562000c4efa3c",
+    "name": "Footer Quick Links",
+    "links": [
+      {
+        "_id": "6a6201cde60562000c4efa3d",
+        "label": "About Us",
+        "url": "/about",
+        "order": 1,
+        "isOpenInNewTab": false,
+        "isActive": true,
+        "children": []
+      },
+      {
+        "_id": "6a6201cde60562000c4efa3e",
+        "label": "Products",
+        "url": "/products",
+        "order": 2,
+        "isOpenInNewTab": false,
+        "isActive": true,
+        "children": []
+      },
+      {
+        "_id": "6a6201cde60562000c4efa3f",
+        "label": "Contact Us",
+        "url": "/contact",
+        "order": 3,
+        "isOpenInNewTab": false,
+        "isActive": true,
+        "children": []
+      },
+      {
+        "_id": "6a6201cde60562000c4efa40",
+        "label": "Blog",
+        "url": "/blog",
+        "order": 4,
+        "isOpenInNewTab": false,
+        "isActive": true,
+        "children": []
+      }
+    ],
+    "__v": 0,
+    "createdAt": "2026-07-23T11:58:05.384Z",
+    "updatedAt": "2026-07-23T11:58:05.384Z"
+  },
+  {
+    "_id": "6a6201cde60562000c4efa41",
+    "name": "Footer Policy Links",
+    "links": [
+      {
+        "_id": "6a6201cde60562000c4efa42",
+        "label": "Privacy Policy",
+        "url": "/privacy-policy",
+        "order": 1,
+        "isOpenInNewTab": false,
+        "isActive": true,
+        "children": []
+      },
+      {
+        "_id": "6a6201cde60562000c4efa43",
+        "label": "Terms & Conditions",
+        "url": "/terms-conditions",
+        "order": 2,
+        "isOpenInNewTab": false,
+        "isActive": true,
+        "children": []
+      },
+      {
+        "_id": "6a6201cde60562000c4efa44",
+        "label": "Refund Policy",
+        "url": "/refund-policy",
+        "order": 3,
+        "isOpenInNewTab": false,
+        "isActive": true,
+        "children": []
+      }
+    ],
+    "__v": 0,
+    "createdAt": "2026-07-23T11:58:05.384Z",
+    "updatedAt": "2026-07-23T11:58:05.384Z"
+  }
+]

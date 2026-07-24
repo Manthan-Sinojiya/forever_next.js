@@ -14,7 +14,16 @@ export async function GET(request: Request) {
     if (featured !== null) options.featured = featured === "true";
     if (category !== null) options.category = category;
 
-    const products = await getProducts(options);
+    let products = await getProducts(options);
+    
+    // Map category object to its name string, if populated
+    products = products.map((p: any) => {
+      const doc = p._doc || p;
+      return {
+        ...doc,
+        category: doc.category && doc.category.name ? doc.category.name : doc.category
+      };
+    });
     
     return NextResponse.json({ success: true, data: products }, { status: 200 });
   } catch (error: any) {

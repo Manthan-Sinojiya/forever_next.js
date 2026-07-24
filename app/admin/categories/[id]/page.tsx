@@ -2,8 +2,9 @@ import { getCategoryById } from "@/actions/admin/categories";
 import CategoryEditForm from "./CategoryEditForm";
 import { notFound } from "next/navigation";
 
-export default async function EditCategoryPage({ params }: { params: { id: string } }) {
-  const { data, success } = await getCategoryById(params.id);
+export default async function EditCategoryPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const { data, success } = await getCategoryById(id);
 
   if (!success || !data) {
     notFound();

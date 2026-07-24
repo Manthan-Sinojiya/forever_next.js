@@ -24,7 +24,7 @@ export async function PUT(
     await dbConnect();
     const { id } = await params;
     const body = await request.json();
-    const updatedSlide = await HeroSlide.findByIdAndUpdate(id, body, { new: true });
+    const updatedSlide = await HeroSlide.findByIdAndUpdate(id, body, { returnDocument: 'after' });
     return NextResponse.json({ success: true, data: updatedSlide }, { status: 200 });
   } catch {
     return NextResponse.json({ success: false, error: "Failed to update slide" }, { status: 400 });

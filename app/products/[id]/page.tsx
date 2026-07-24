@@ -30,9 +30,16 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
   let product = null;
   try {
-    const doc = await Product.findById(id);
+    const doc = await Product.findById(id).populate("category");
     if (doc) {
-      product = JSON.parse(JSON.stringify(doc));
+      const rawProduct = JSON.parse(JSON.stringify(doc));
+      product = {
+        ...rawProduct,
+        category: rawProduct.category?.name || rawProduct.category || "General",
+        imageUrl: rawProduct.images && rawProduct.images.length > 0 ? rawProduct.images[0].url : "/products/missing-image-test.png",
+        rating: rawProduct.rating || 5,
+        originalPrice: rawProduct.originalPrice || rawProduct.mrp || Math.round(rawProduct.price * 1.35)
+      };
     }
   } catch (err) {
     console.error("Error loading product details:", err);

@@ -60,6 +60,7 @@ const SIDEBAR_GROUPS = [
       { label: "Banners", href: "/admin/banners", icon: ImageIcon },
       { label: "Blog", href: "/admin/blog", icon: FileText },
       { label: "CMS Pages", href: "/admin/cms", icon: FileText },
+      { label: "Custom Pages", href: "/admin/custompages", icon: FileText },
       { label: "FAQs", href: "/admin/faqs", icon: MessageCircleQuestion },
       { label: "Testimonials", href: "/admin/testimonials", icon: MessageSquare },
     ]

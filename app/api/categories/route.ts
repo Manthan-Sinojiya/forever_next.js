@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
-import { Product } from "@/models/Product";
+import Category from "@/models/Category";
 
 export async function GET() {
   try {
     await dbConnect();
-    // Aggregate unique categories with product counts
-    const categories = await Product.aggregate([
-      { $group: { _id: "$category", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $project: { _id: 0, name: "$_id", count: 1 } }
-    ]);
-    return NextResponse.json({ success: true, data: categories });
+    // Fetch all active categories directly from Category model
+    const categories = await Category.find({ status: "active" }).lean();
+    
+    // Map them to ensure they have the isActive flag that the frontend expects
+    const formattedCategories = categories.map((c: any) => ({
+      ...c,
+      isActive: true,
+      image: c.image || (c.slug === "healthcare-equipments" ? "/categories/healthcare.png" : `/categories/${c.slug}.png`)
+    }));
+
+    return NextResponse.json({ success: true, data: formattedCategories });
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }

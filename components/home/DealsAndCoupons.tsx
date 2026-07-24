@@ -72,14 +72,14 @@ function getClaimedStats(price: number, _id: string) {
   return { claimed, left };
 }
 
-export default function DealsAndCoupons() {
+export default function DealsAndCoupons({ title, subtitle, endDate }: { title?: string; subtitle?: string; endDate?: string }) {
   const [deals, setDeals] = useState<Product[]>(STATIC_DEALS);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  
+
   // Timer state
   const [timeLeft, setTimeLeft] = useState({ hours: 8, minutes: 45, seconds: 30 });
-  
+
   const cart = useCartStore((state) => state.cart);
   const addToCart = useCartStore((state) => state.addToCart);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
@@ -93,7 +93,14 @@ export default function DealsAndCoupons() {
         const json = await res.json();
         if (cancelled) return;
         if (json.success && json.data && json.data.length > 0) {
-          setDeals(json.data);
+          let parsed = json.data.map((p: any) => ({
+            ...p,
+            originalPrice: p.originalPrice || p.mrp || p.price * 1.5,
+            imageUrl: p.images && p.images.length > 0 ? p.images[0].url : "/products/missing-image-test.png",
+            rating: p.rating || 5,
+            category: p.category?.name || p.category || "General"
+          }));
+          setDeals(parsed);
         } else {
           setDeals(STATIC_DEALS);
         }
@@ -107,21 +114,25 @@ export default function DealsAndCoupons() {
     loadDeals();
 
     // Countdown logic
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        } else if (prev.hours > 0) {
-          return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        } else {
-          return { hours: 12, minutes: 0, seconds: 0 };
-        }
-      });
-    }, 1000);
+    if (endDate) {
+      const targetDate = new Date(endDate).getTime();
+      const interval = setInterval(() => {
+        const now = new Date().getTime();
+        const distance = targetDate - now;
 
-    return () => { cancelled = true; clearInterval(interval); };
+        if (distance < 0) {
+          setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+        } else {
+          const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)) + Math.floor(distance / (1000 * 60 * 60 * 24)) * 24;
+          const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+          setTimeLeft({ hours, minutes, seconds });
+        }
+      }, 1000);
+      return () => { cancelled = true; clearInterval(interval); };
+    }
+
+    return () => { cancelled = true; };
   }, []);
 
   const scroll = (direction: "left" | "right") => {
@@ -182,45 +193,43 @@ export default function DealsAndCoupons() {
       <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-3xl -mr-48 -translate-y-1/2 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-3">
               <span className="bg-red-50 border border-red-100 text-red-650 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest flex items-center gap-1 shadow-sm">
-                <Zap className="w-3.5 h-3.5 text-red-500 animate-pulse fill-red-500" /> Limited Time Sales
+                <Zap className="w-3.5 h-3.5 text-red-500 animate-pulse fill-red-500" /> {subtitle || "Limited Time Sales"}
               </span>
-              <div className="text-xs text-slate-500 flex items-center gap-1.5 font-bold">
-                <Clock className="w-3.5 h-3.5 text-red-500 animate-pulse" /> Ends in:
-                <div className="flex items-center gap-1">
-                  <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded font-mono font-black border border-red-100">
-                    {String(timeLeft.hours).padStart(2, "0")}
-                  </span>
-                  <span className="text-red-550">:</span>
-                  <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded font-mono font-black border border-red-100">
-                    {String(timeLeft.minutes).padStart(2, "0")}
-                  </span>
-                  <span className="text-red-550">:</span>
-                  <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded font-mono font-black border border-red-100">
-                    {String(timeLeft.seconds).padStart(2, "0")}
-                  </span>
+              {endDate && (
+                <div className="text-xs text-slate-500 flex items-center gap-1.5 font-bold">
+                  <Clock className="w-3.5 h-3.5 text-red-500 animate-pulse" /> Ends in:
+                  <div className="flex items-center gap-1">
+                    <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded font-mono font-black border border-red-100">
+                      {String(timeLeft.hours).padStart(2, "0")}
+                    </span>
+                    <span className="text-red-550">:</span>
+                    <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded font-mono font-black border border-red-100">
+                      {String(timeLeft.minutes).padStart(2, "0")}
+                    </span>
+                    <span className="text-red-550">:</span>
+                    <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded font-mono font-black border border-red-100">
+                      {String(timeLeft.seconds).padStart(2, "0")}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <h2 className="text-3xl font-extrabold font-heading text-slate-800 leading-tight mt-2">
-              Today&apos;s <span className="gradient-text font-black">Lightning Deals</span>
+              {title ? (
+                <span dangerouslySetInnerHTML={{ __html: title.replace(/Lightning Deals/gi, '<span class="gradient-text font-black">Lightning Deals</span>') }} />
+              ) : (
+                <>Today's <span className="gradient-text font-black">Lightning Deals</span></>
+              )}
             </h2>
           </div>
 
           <div className="flex items-center gap-4 self-end sm:self-auto">
-            {/* View All Button */}
-            <Link
-              href="/shop"
-              className="text-xs text-red-650 hover:text-red-700 font-extrabold flex items-center gap-1 transition-all hover:underline mr-1"
-            >
-              View All Deals <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-
             {/* Scroll Buttons */}
             <div className="flex items-center gap-1.5 bg-white border border-slate-100 rounded-xl p-1 shadow-sm">
               <button
@@ -238,6 +247,15 @@ export default function DealsAndCoupons() {
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
+
+            {/* View All Button */}
+            <Link
+              href="/shop"
+              className="text-xs text-red-650 hover:text-red-700 font-extrabold flex items-center gap-1 transition-all hover:underline mr-1"
+            >
+              View All Deals <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+
           </div>
         </div>
 

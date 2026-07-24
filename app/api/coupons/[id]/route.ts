@@ -24,7 +24,7 @@ export async function PUT(
     await dbConnect();
     const { id } = await params;
     const body = await request.json();
-    const updatedCoupon = await Coupon.findByIdAndUpdate(id, body, { new: true });
+    const updatedCoupon = await Coupon.findByIdAndUpdate(id, body, { returnDocument: 'after' });
     return NextResponse.json({ success: true, data: updatedCoupon }, { status: 200 });
   } catch {
     return NextResponse.json({ success: false, error: "Failed to update coupon" }, { status: 400 });

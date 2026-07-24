@@ -19,13 +19,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/lib/store";
 import { useRouter, usePathname } from "next/navigation";
-
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/products", label: "Products" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
-];
+import { signOut } from "next-auth/react";
 
 export default function Navbar() {
   const mounted = useSyncExternalStore(
@@ -50,7 +44,8 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [announcement, setAnnouncement] = useState("🎉 Free shipping on all orders above ₹499! Use code: EXTRA10 for 10% off");
   const [announcementBg, setAnnouncementBg] = useState("#0a8c6e");
-  const [announcementStyle, setAnnouncementStyle] = useState("static");
+  const [announcementStyle, setAnnouncementStyle] = useState("scrolling");
+  const [dynamicNavLinks, setDynamicNavLinks] = useState<{ href: string; label: string; subItems?: { label: string; url: string }[] }[]>([]);
 
   useEffect(() => {
     const savedRole = localStorage.getItem("userRole");
@@ -58,30 +53,82 @@ export default function Navbar() {
     setRole(savedRole || "user");
     setIsLoggedIn(!!savedEmail);
 
-    type Setting = { key: string; value: string };
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && Array.isArray(data.data)) {
-          const textSetting = data.data.find((s: Setting) => s.key === "announcement");
-          const bgSetting = data.data.find((s: Setting) => s.key === "announcement_bg");
-          const styleSetting = data.data.find((s: Setting) => s.key === "announcement_style");
+    // Fetch Settings
+    const cachedSettings = sessionStorage.getItem("nav_settings");
+    if (cachedSettings) {
+      applySettings(JSON.parse(cachedSettings));
+    } else {
+      fetch("/api/settings")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.data && data.data.length > 0) {
+            sessionStorage.setItem("nav_settings", JSON.stringify(data.data[0]));
+            applySettings(data.data[0]);
+          }
+        })
+        .catch((err) => console.error("Error loading settings:", err));
+    }
 
-          if (textSetting?.value) setAnnouncement(textSetting.value);
-          if (bgSetting?.value) setAnnouncementBg(bgSetting.value);
-          if (styleSetting?.value) setAnnouncementStyle(styleSetting.value);
+    function applySettings(settingsObj: any) {
+      if (settingsObj?.announcement) {
+        const { show, text, behavior, bg } = settingsObj.announcement;
+        if (show === false) {
+          setAnnouncement("");
+        } else {
+          if (text) setAnnouncement(text);
+          if (bg) setAnnouncementBg(bg);
+          if (behavior) setAnnouncementStyle(behavior);
         }
-      })
-      .catch((err) => console.error("Error loading announcement settings:", err));
+      }
+    }
 
-    fetch("/api/categories")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.data) {
-          setCategories(data.data.filter((c: any) => c.isActive));
-        }
-      })
-      .catch((err) => console.error("Error loading categories:", err));
+    // Fetch Dynamic Menu (Main Header)
+    const cachedMenu = sessionStorage.getItem("nav_menu");
+    if (cachedMenu) {
+      setDynamicNavLinks(JSON.parse(cachedMenu));
+    } else {
+      fetch("/api/menus/Main Header")
+        .then((res) => res.json())
+        .then((data) => {
+          let fetchedLinks = [];
+          if (data.success && data.data?.links) {
+            fetchedLinks = data.data.links
+              .filter((link: any) => link.isActive)
+              .sort((a: any, b: any) => a.order - b.order)
+              .map((link: any) => ({ href: link.url, label: link.label, subItems: link.subItems }));
+          }
+          if (fetchedLinks.length === 0) {
+            fetchedLinks = [
+              { href: "/", label: "Home" },
+              { href: "/products", label: "Products" },
+              { href: "/about", label: "About" },
+              { href: "/contact", label: "Contact" },
+            ];
+          }
+          sessionStorage.setItem("nav_menu", JSON.stringify(fetchedLinks));
+          setDynamicNavLinks(fetchedLinks);
+        })
+        .catch((err) => {
+          console.error("Error loading menu:", err);
+        });
+    }
+
+    // Fetch Categories
+    const cachedCats = sessionStorage.getItem("nav_categories");
+    if (cachedCats) {
+      setCategories(JSON.parse(cachedCats));
+    } else {
+      fetch("/api/categories")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.data) {
+            const cats = data.data.filter((c: any) => c.isActive);
+            sessionStorage.setItem("nav_categories", JSON.stringify(cats));
+            setCategories(cats);
+          }
+        })
+        .catch((err) => console.error("Error loading categories:", err));
+    }
 
     if (savedEmail) {
       fetch(`/api/wishlist?email=${encodeURIComponent(savedEmail)}`)
@@ -113,13 +160,14 @@ export default function Navbar() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("userRole");
     localStorage.removeItem("userName");
     localStorage.removeItem("userEmail");
     setRole("user");
     setIsLoggedIn(false);
     window.dispatchEvent(new Event("storage"));
+    await signOut({ redirect: false });
     router.push("/");
   };
 
@@ -175,35 +223,37 @@ export default function Navbar() {
   return (
     <>
       {/* Announcement Bar */}
-      <div
-        className="text-white text-[12.5px] py-2.5 px-4 text-center font-bold tracking-wider relative z-50 overflow-hidden"
-        style={{ backgroundColor: announcementBg }}
-      >
-        <div className="max-w-7xl mx-auto flex items-center justify-center h-5">
-          {announcementStyle === "scrolling" ? (
-            <div className="w-full overflow-hidden whitespace-nowrap relative">
-              <div className="animate-marquee-nav-active whitespace-nowrap">
-                <span className="px-8">{announcement}</span>
-                <span className="px-8">{announcement}</span>
-                <span className="px-8">{announcement}</span>
+      {announcement && (
+        <div
+          className="text-white text-[12.5px] py-2.5 px-4 text-center font-bold tracking-wider relative z-50 overflow-hidden"
+          style={{ backgroundColor: announcementBg }}
+        >
+          <div className="max-w-7xl mx-auto flex items-center justify-center h-5">
+            {announcementStyle === "marquee" ? (
+              <div className="w-full overflow-hidden whitespace-nowrap relative">
+                <div className="animate-marquee-nav-active whitespace-nowrap">
+                  <span className="px-8">{announcement}</span>
+                  <span className="px-8">{announcement}</span>
+                  <span className="px-8">{announcement}</span>
+                </div>
               </div>
-            </div>
-          ) : (
-            <span className="truncate">{announcement}</span>
-          )}
-        </div>
+            ) : (
+              <span className="truncate">{announcement}</span>
+            )}
+          </div>
 
-        <style dangerouslySetInnerHTML={{__html: `
-          @keyframes marqueeNav {
-            0% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(-33.33%, 0, 0); }
-          }
-          .animate-marquee-nav-active {
-            display: inline-block;
-            animation: marqueeNav 25s linear infinite;
-          }
-        `}} />
-      </div>
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes marqueeNav {
+              0% { transform: translate3d(0, 0, 0); }
+              100% { transform: translate3d(-33.33%, 0, 0); }
+            }
+            .animate-marquee-nav-active {
+              display: inline-block;
+              animation: marqueeNav 25s linear infinite;
+            }
+          `}} />
+        </div>
+      )}
 
       {/* Main Navbar */}
       <nav
@@ -231,12 +281,10 @@ export default function Navbar() {
 
             {/* Desktop Menu */}
             <div className="hidden lg:flex items-center gap-1">
-              {navLinks.map((link) => (
+              {dynamicNavLinks.map((link) => (
                 <div
                   key={link.href}
                   className="relative group"
-                  onMouseEnter={() => link.label === "Products" && setShowMegaMenu(true)}
-                  onMouseLeave={() => link.label === "Products" && setShowMegaMenu(false)}
                 >
                   <Link
                     href={link.href}
@@ -256,42 +304,18 @@ export default function Navbar() {
                     )}
                   </Link>
 
-                  {/* Mega Menu */}
-                  {link.label === "Products" && (
-                    <div className={`absolute top-full left-1/2 -translate-x-1/2 w-[800px] bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-slate-100 transition-all duration-300 origin-top overflow-hidden z-50 ${showMegaMenu ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'}`}>
-                      <div className="p-6">
-                        <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-50">
-                          <h3 className="text-sm font-black text-slate-800 tracking-wide uppercase">Categories</h3>
-                          <Link href="/shop" className="text-xs font-bold text-emerald-600 hover:text-emerald-700">View All &rarr;</Link>
-                        </div>
-                        <div className="grid grid-cols-4 gap-4">
-                          {categories.map((cat) => (
-                            <Link
-                              key={cat.slug}
-                              href={`/categories/${cat.slug}`}
-                              className="group/item p-3 rounded-xl hover:bg-slate-50 transition-colors flex flex-col items-center text-center gap-2"
-                              onClick={() => setShowMegaMenu(false)}
-                            >
-                              <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center overflow-hidden border border-emerald-100/50 group-hover/item:border-emerald-200 group-hover/item:shadow-sm transition-all">
-                                {cat.image ? (
-                                  <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  <Leaf className="w-5 h-5 text-emerald-500" />
-                                )}
-                              </div>
-                              <span className="text-xs font-bold text-slate-700 group-hover/item:text-emerald-650">{cat.name}</span>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="bg-emerald-50/50 px-6 py-3 border-t border-emerald-100/30 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
-                          <Sparkles className="w-4 h-4 text-emerald-600" /> Premium Ayurvedic Formulations
-                        </div>
-                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
-                          <Heart className="w-4 h-4 text-emerald-600" /> 100% Safe & Natural
-                        </div>
-                      </div>
+                  {/* Submenu for dynamic links */}
+                  {link.subItems && link.subItems.length > 0 && (
+                    <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
+                      {link.subItems.map((subItem, idx) => (
+                        <Link
+                          key={idx}
+                          href={subItem.url}
+                          className="block px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors border-b border-gray-50 last:border-0"
+                        >
+                          {subItem.label}
+                        </Link>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -468,7 +492,7 @@ export default function Navbar() {
                   alt="Ayurveda Logo"
                   width={36}
                   height={36}
-                  className="h-9 w-auto object-contain"
+                  className="h-auto w-auto object-contain max-h-9"
                 />
               </Link>
             </div>
@@ -502,7 +526,7 @@ export default function Navbar() {
                   alt="Ayurveda Logo"
                   width={28}
                   height={28}
-                  className="h-7 w-auto object-contain"
+                  className="h-auto w-auto object-contain max-h-7"
                 />
               </Link>
             </div>
@@ -571,7 +595,7 @@ export default function Navbar() {
                 </form>
 
                 {/* Mobile Nav Links */}
-                {navLinks.map((link) => (
+                {dynamicNavLinks.map((link) => (
                   <div key={link.href}>
                     <Link
                       href={link.href}
@@ -583,6 +607,23 @@ export default function Navbar() {
                     >
                       {link.label}
                     </Link>
+                    {link.subItems && link.subItems.length > 0 && (
+                      <div className="pl-8 pr-4 space-y-1 my-1">
+                        {link.subItems.map((sub, idx) => (
+                          <Link
+                            key={idx}
+                            href={sub.url}
+                            className={`block py-2 px-3 text-sm font-medium rounded-lg transition-all ${
+                              isActive(sub.url)
+                                ? "text-emerald-600 bg-emerald-50/50"
+                                : "text-foreground/70 hover:text-emerald-600 hover:bg-light-gray"
+                            }`}
+                          >
+                            {sub.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
 

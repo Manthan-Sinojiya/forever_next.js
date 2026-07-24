@@ -106,7 +106,6 @@ export default function Hero({ slides: cmsSlides }: { slides?: Slide[] }) {
                 fill
                 priority
                 unoptimized
-                quality={100}
                 className="object-cover object-center transition-all duration-1000"
                 style={{ transform: "translateZ(0)" }} // Prevents blurry rendering on composite layers
               />

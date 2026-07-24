@@ -5,6 +5,7 @@ import { DataTable } from "@/components/admin/DataTable";
 import { deleteCustomer } from "@/actions/admin/customers";
 import { User, Mail, Phone, Eye } from "lucide-react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 export default function CustomersClient({ initialData, totalPages, initialPage, initialSearch }: any) {
   const router = useRouter();
@@ -75,11 +76,36 @@ export default function CustomersClient({ initialData, totalPages, initialPage, 
     }
   ];
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to remove this customer?")) {
-      await deleteCustomer(id);
-      router.refresh();
-    }
+  const handleDelete = (id: string) => {
+    toast((t) => (
+      <div>
+        <p className="font-medium mb-3">Are you sure you want to remove this customer?</p>
+        <div className="flex gap-2 justify-end">
+          <button 
+            className="px-3 py-1.5 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancel
+          </button>
+          <button 
+            className="px-3 py-1.5 bg-rose-600 text-white text-sm font-medium rounded-lg hover:bg-rose-700 transition-colors"
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const loadingToast = toast.loading("Removing customer...");
+              try {
+                await deleteCustomer(id);
+                toast.success("Customer removed successfully", { id: loadingToast });
+                router.refresh();
+              } catch (error) {
+                toast.error("Failed to remove customer", { id: loadingToast });
+              }
+            }}
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    ), { duration: Infinity });
   };
 
   return (

@@ -66,3 +66,15 @@ export async function createTestimonial(data: any) {
     return { success: false, error: "Failed to create testimonial" };
   }
 }
+
+export async function updateTestimonial(id: string, data: any) {
+  try {
+    await connectDB();
+    await Testimonial.findByIdAndUpdate(id, data);
+    revalidatePath("/admin/testimonials");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating testimonial:", error);
+    return { success: false, error: "Failed to update testimonial" };
+  }
+}

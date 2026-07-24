@@ -4,7 +4,8 @@ export interface IOrderItem {
   productId: mongoose.Types.ObjectId;
   name: string;
   price: number;
-  qty: number;
+  quantity: number;
+  imageUrl?: string;
 }
 
 export interface IShippingAddress {
@@ -16,18 +17,16 @@ export interface IShippingAddress {
   zipCode: string;
 }
 
-export interface IPricing {
-  subtotal: number;
-  tax: number;
-  total: number;
-}
-
 export interface IOrder extends Document {
   orderNumber: string;
-  user: mongoose.Types.ObjectId;
+  userEmail: string;
   items: IOrderItem[];
   shippingAddress: IShippingAddress;
-  pricing: IPricing;
+  totalAmount: number;
+  discountAmount?: number;
+  couponCode?: string;
+  paymentMethod: string;
+  paymentDetails?: any;
   paymentStatus: "pending" | "paid";
   orderStatus: "pending" | "shipping" | "done";
   trackingNumber?: string;
@@ -40,13 +39,14 @@ export interface IOrder extends Document {
 const OrderSchema = new Schema<IOrder>(
   {
     orderNumber: { type: String, required: true, unique: true },
-    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    userEmail: { type: String, required: true },
     items: [
       {
         productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
         name: { type: String, required: true },
         price: { type: Number, required: true },
-        qty: { type: Number, required: true },
+        quantity: { type: Number, required: true },
+        imageUrl: { type: String },
       },
     ],
     shippingAddress: {
@@ -57,11 +57,11 @@ const OrderSchema = new Schema<IOrder>(
       state: { type: String, required: true },
       zipCode: { type: String, required: true },
     },
-    pricing: {
-      subtotal: { type: Number, required: true },
-      tax: { type: Number, required: true },
-      total: { type: Number, required: true },
-    },
+    totalAmount: { type: Number, required: true },
+    discountAmount: { type: Number, default: 0 },
+    couponCode: { type: String },
+    paymentMethod: { type: String, required: true },
+    paymentDetails: { type: Schema.Types.Mixed },
     paymentStatus: {
       type: String,
       enum: ["pending", "paid"],
@@ -79,5 +79,9 @@ const OrderSchema = new Schema<IOrder>(
   { timestamps: true }
 );
 
-export const Order = (mongoose.models.Order as Model<IOrder>) || mongoose.model<IOrder>("Order", OrderSchema);
+if (mongoose.models.Order) {
+  delete mongoose.models.Order;
+}
+
+export const Order = mongoose.model<IOrder>("Order", OrderSchema);
 export default Order;

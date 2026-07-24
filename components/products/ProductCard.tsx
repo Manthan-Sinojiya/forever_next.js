@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Star, Heart, ShoppingCart, Minus, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCartStore } from "@/lib/store";
+
+let globalUiSettings: any = null;
+let fetchingUiSettings = false;
+const uiSettingsListeners: ((settings: any) => void)[] = [];
+
 
 export interface Product {
   _id: string;
@@ -118,6 +123,30 @@ export default function ProductCard({
   itemsLeft,
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [cardStyle, setCardStyle] = useState("style1");
+  
+  useEffect(() => {
+    let mounted = true;
+    if (globalUiSettings) {
+      setCardStyle(globalUiSettings.productCardStyle || "style1");
+    } else if (!fetchingUiSettings) {
+      fetchingUiSettings = true;
+      fetch("/api/settings").then(res => res.json()).then(data => {
+        if (data.success && data.data && data.data.length > 0) {
+          globalUiSettings = data.data[0].ui || {};
+          if (mounted) setCardStyle(globalUiSettings.productCardStyle || "style1");
+          uiSettingsListeners.forEach(l => l(globalUiSettings));
+        }
+      }).catch(console.error);
+    } else {
+      uiSettingsListeners.push((settings: any) => {
+        if (mounted) setCardStyle(settings.productCardStyle || "style1");
+      });
+    }
+    return () => { mounted = false; };
+  }, []);
+  
   const hoverImageUrl = getHoverImageUrl(product);
 
   // Global Zustand Stores
@@ -193,6 +222,94 @@ export default function ProductCard({
 
   const badgeBg = discount % 2 === 0 ? "bg-[#C25115]" : "bg-[#0D623F]";
 
+  if (cardStyle === "minimal") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        whileHover={{ y: -4 }}
+        viewport={{ once: true }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="group relative flex flex-col w-full bg-white overflow-hidden transition-all duration-300"
+      >
+        <div className="relative aspect-[4/5] bg-slate-50 mb-4 rounded-xl overflow-hidden group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-shadow">
+          <Link href={`/products/${product._id}`} className="absolute inset-0 z-0">
+            {imageError ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                <span className="text-[10px] font-medium tracking-wide uppercase">No Image</span>
+              </div>
+            ) : (
+              <>
+                <Image
+                  src={product.imageUrl || "/logo/logo.png"}
+                  alt={product.name}
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                  className={`object-cover transition-opacity duration-700 ${isHovered ? "opacity-0" : "opacity-100"}`}
+                  onError={() => setImageError(true)}
+                />
+                <Image
+                  src={hoverImageUrl || "/logo/logo.png"}
+                  alt={product.name}
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                  className={`object-cover transition-opacity duration-700 ${isHovered ? "opacity-100" : "opacity-0"}`}
+                  onError={() => setImageError(true)}
+                />
+              </>
+            )}
+          </Link>
+
+          {/* Minimal Floating Actions */}
+          <div className={`absolute bottom-4 left-4 right-4 flex items-center justify-center gap-2 transition-all duration-300 ${isHovered ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"}`}>
+            {variant !== "wishlist" && (
+              <button
+                onClick={handleAddToCartClick}
+                className="flex-1 bg-slate-900 text-white font-medium text-xs py-2.5 px-4 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                {inCart ? "In Cart" : "Quick Add"}
+              </button>
+            )}
+            <button
+              onClick={handleWishlistClick}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg bg-white shadow-sm hover:bg-slate-50 transition-colors ${activeIsWishlisted ? "text-rose-500" : "text-slate-600"}`}
+              aria-label="Wishlist"
+            >
+              <Heart className="w-4 h-4" fill={activeIsWishlisted ? "currentColor" : "none"} />
+            </button>
+          </div>
+
+          {/* Minimal Badges */}
+          {discount > 0 && (
+            <span className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">
+              -{discount}%
+            </span>
+          )}
+        </div>
+
+        {/* Minimal Details */}
+        <div className="flex flex-col gap-1 px-1">
+          <Link href={`/products/${product._id}`}>
+            <h3 className="text-sm font-medium text-slate-900 leading-tight group-hover:underline underline-offset-4 decoration-slate-300 line-clamp-1">
+              {product.name}
+            </h3>
+          </Link>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-slate-900">
+              ₹{product.price.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </span>
+            {fallbackOriginalPrice > product.price && (
+              <span className="text-xs text-slate-400 line-through">
+                ₹{fallbackOriginalPrice.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </span>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -207,29 +324,52 @@ export default function ProductCard({
       {/* ── IMAGE AREA ── */}
       <div className="relative aspect-square m-2 rounded-2xl overflow-hidden bg-[#F8F9FA] border border-slate-100/50">
         <Link href={`/products/${product._id}`} className="absolute inset-0 z-0 block">
-          {/* Primary Image */}
-          <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-103">
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-              className={`object-cover transition-all duration-550 ${isHovered ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
-              loading="lazy"
-            />
-          </div>
+          
+          {imageError ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 text-slate-400 p-4">
+              <Image 
+                src="/logo/logo.png" 
+                alt="Forever Healthcare Logo" 
+                width={60} 
+                height={60} 
+                className="opacity-20 mb-2 object-contain" 
+              />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-300">Image Coming Soon</span>
+            </div>
+          ) : (
+            <>
+              {/* Primary Image */}
+              <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-103">
+                <Image
+                  src={product.imageUrl || "/logo/logo.png"}
+                  alt={product.name}
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                  className={`object-cover transition-all duration-550 ${isHovered ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
+                  loading="lazy"
+                  onError={() => setImageError(true)}
+                />
+              </div>
 
-          {/* Hover Image */}
-          <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-103">
-            <Image
-              src={hoverImageUrl}
-              alt={`${product.name} alternate view`}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-              className={`object-cover transition-all duration-550 ${isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
-              loading="lazy"
-            />
-          </div>
+              {/* Hover Image */}
+              <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-103">
+                <Image
+                  src={hoverImageUrl || "/logo/logo.png"}
+                  alt={`${product.name} alternate view`}
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                  className={`object-cover transition-all duration-550 ${isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+                  loading="lazy"
+                  onError={() => setImageError(true)}
+                />
+              </div>
+              
+              {/* CSS Watermark Overlay */}
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-10 mix-blend-overlay rotate-[-30deg] scale-150">
+                <span className="text-4xl font-extrabold text-slate-900 tracking-widest whitespace-nowrap">FOREVER HEALTHCARE</span>
+              </div>
+            </>
+          )}
         </Link>
 
         {/* Floating Actions on Top-Right */}

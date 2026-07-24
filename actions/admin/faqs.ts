@@ -54,3 +54,15 @@ export async function deleteFaq(id: string) {
     return { success: false, error: "Failed to delete FAQ" };
   }
 }
+
+export async function updateFaq(id: string, data: any) {
+  try {
+    await connectDB();
+    await Faq.findByIdAndUpdate(id, data);
+    revalidatePath("/admin/faqs");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating FAQ:", error);
+    return { success: false, error: "Failed to update FAQ" };
+  }
+}

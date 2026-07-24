@@ -41,7 +41,7 @@ const aboutStats = [
   { value: 50, suffix: "+", label: "Expert Doctors" },
 ];
 
-export default function About({ isPage = false, title, description }: { isPage?: boolean, title?: string, description?: string }) {
+export default function About({ isPage = false, title, description, image }: { isPage?: boolean, title?: string, description?: string, image?: string }) {
   if (!isPage) {
     return (
       <section className="py-20 bg-white overflow-hidden relative" id="about">
@@ -58,7 +58,7 @@ export default function About({ isPage = false, title, description }: { isPage?:
             >
               <div className="relative rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] aspect-[4/3] group bg-slate-50">
                 <Image
-                  src="/about-ayurveda.png"
+                  src={image || "/about-ayurveda.png"}
                   alt="Forever Healthcare Ayurvedic Purity"
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"

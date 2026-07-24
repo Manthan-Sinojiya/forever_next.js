@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/admin/DataTable";
-import { deleteTestimonial, toggleTestimonialApproval, createTestimonial } from "@/actions/admin/testimonials";
+import { deleteTestimonial, toggleTestimonialApproval, createTestimonial, updateTestimonial } from "@/actions/admin/testimonials";
 import { X, Star, User, Video, PlayCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,6 +31,7 @@ export default function TestimonialsClient({ initialData, totalPages }: any) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -120,6 +121,44 @@ export default function TestimonialsClient({ initialData, totalPages }: any) {
     }
   };
 
+  const handleEdit = (row: any) => {
+    setEditingId(row._id || row.id);
+    reset({
+      customerName: row.customerName || "",
+      customerImage: row.customerImage || "",
+      designation: row.designation || "",
+      company: row.company || "",
+      review: row.review || "",
+      rating: row.rating || 5,
+      isFeatured: row.isFeatured || false,
+      status: row.status || "active",
+      sortOrder: row.sortOrder || 0,
+      videoType: row.videoType || "none",
+      videoUrl: row.videoUrl || "",
+      videoThumbnail: row.videoThumbnail || "",
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenAdd = () => {
+    setEditingId(null);
+    reset({
+      customerName: "",
+      customerImage: "",
+      designation: "",
+      company: "",
+      review: "",
+      rating: 5,
+      isFeatured: false,
+      status: "active",
+      sortOrder: 0,
+      videoType: "none",
+      videoUrl: "",
+      videoThumbnail: "",
+    });
+    setIsModalOpen(true);
+  };
+
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
@@ -127,7 +166,11 @@ export default function TestimonialsClient({ initialData, totalPages }: any) {
         ...data,
         videoType: data.videoType === "none" ? undefined : data.videoType
       };
-      await createTestimonial(payload);
+      if (editingId) {
+        await updateTestimonial(editingId, payload);
+      } else {
+        await createTestimonial(payload);
+      }
       setIsModalOpen(false);
       reset();
       router.refresh();
@@ -157,7 +200,8 @@ export default function TestimonialsClient({ initialData, totalPages }: any) {
         title="Customer Reviews"
         columns={columns}
         data={initialData}
-        onAdd={() => setIsModalOpen(true)}
+        onAdd={handleOpenAdd}
+        onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Search testimonials..."
       />

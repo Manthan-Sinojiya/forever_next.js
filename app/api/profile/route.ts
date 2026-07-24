@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 // GET user profile by email
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("email");
 
@@ -38,6 +44,10 @@ export async function GET(request: Request) {
 // PUT update user profile
 export async function PUT(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
     const { email, name, phone, city, state } = await request.json();
 
     if (!email) {

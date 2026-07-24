@@ -7,7 +7,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     await dbConnect();
     const body = await req.json();
-    const testimonial = await Testimonial.findByIdAndUpdate(resolvedParams.id, body, { new: true });
+    const testimonial = await Testimonial.findByIdAndUpdate(resolvedParams.id, body, { returnDocument: 'after' });
     if (!testimonial) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true, data: testimonial });
   } catch (error) {

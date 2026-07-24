@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { bulkSaveCmsSections } from "@/actions/admin/cms";
 import { ArrowUp, ArrowDown, Trash2, Eye, Save, Globe, ChevronDown } from "lucide-react";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 type SectionType = "CATEGORYGRID" | "HERO" | "PRODUCTGRID" | "RICHCONTENT" | "OFFERBANNER" | "BLOGGRID";
 
@@ -167,9 +168,9 @@ export default function CmsClient({ initialData }: { initialData: any[] }) {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 flex items-center justify-center">
+        <div className="flex-1 overflow-y-auto p-8 flex items-start justify-center">
           {!activeSection ? (
-            <div className="text-center text-slate-400 flex flex-col items-center">
+            <div className="text-center text-slate-400 flex flex-col items-center mt-20">
               <Eye size={48} className="mb-4 text-slate-300 opacity-50" />
               <p className="text-lg">Select a section from the left panel to configure its contents.</p>
             </div>
@@ -214,9 +215,26 @@ export default function CmsClient({ initialData }: { initialData: any[] }) {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Subtitle / Description</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Top Tags (Comma Separated)</label>
                   <input 
                     type="text" 
+                    value={activeSection.subtitle || ""}
+                    onChange={(e) => {
+                      const newSections = sections.map(s => s.id === activeSection.id ? { ...s, subtitle: e.target.value } : s);
+                      setSections(newSections);
+                    }}
+                    placeholder="e.g. Best Sellers, Trending, Fresh"
+                    className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">These appear as small badges above the heading.</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    {activeSection.type === "OFFERBANNER" ? "Timer End Date (e.g. 2026-12-31T23:59:59)" : "Bottom Subtitle / Description"}
+                  </label>
+                  <input 
+                    type={activeSection.type === "OFFERBANNER" ? "datetime-local" : "text"} 
                     value={activeSection.description || ""}
                     onChange={(e) => {
                       const newSections = sections.map(s => s.id === activeSection.id ? { ...s, description: e.target.value } : s);
@@ -224,13 +242,61 @@ export default function CmsClient({ initialData }: { initialData: any[] }) {
                     }}
                     className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow"
                   />
+                  {activeSection.type === "OFFERBANNER" && <p className="text-xs text-slate-500 mt-1">Leave empty to hide the countdown timer.</p>}
                 </div>
                 
-                {activeSection.type === "HERO" && (
+                {(activeSection.type === "PRODUCTGRID" || activeSection.type === "CATEGORYGRID" || activeSection.type === "BLOGGRID") && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Item Limit</label>
+                      <input 
+                        type="number" 
+                        value={activeSection.limit || 4} 
+                        onChange={(e) => {
+                          const newSections = sections.map(s => s.id === activeSection.id ? { ...s, limit: parseInt(e.target.value) || 4 } : s);
+                          setSections(newSections);
+                        }}
+                        className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">Number of items to display in the grid.</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Card Style</label>
+                      <select
+                        value={activeSection.cardStyle || "style1"}
+                        onChange={(e) => {
+                          const newSections = sections.map(s => s.id === activeSection.id ? { ...s, cardStyle: e.target.value } : s);
+                          setSections(newSections);
+                        }}
+                        className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow bg-white"
+                      >
+                        <option value="style1">Style 1</option>
+                        <option value="style2">Style 2</option>
+                        <option value="style3">Style 3</option>
+                        <option value="Classic Bordered">Classic Bordered</option>
+                      </select>
+                      <p className="text-xs text-slate-500 mt-1">Choose UI card design for this section.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {(activeSection.type === "HERO" || activeSection.type === "TRUSTBADGES") && (
                   <div className="border-t border-slate-200 pt-6 mt-6">
                     <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-sm font-bold text-slate-800">Banner Slides</h4>
-                      <button className="text-xs bg-emerald-50 text-emerald-600 px-2 py-1 rounded font-medium hover:bg-emerald-100">
+                      <h4 className="text-sm font-bold text-slate-800">{activeSection.type === "TRUSTBADGES" ? "Trust Cards / Badges" : "Banner Slides"}</h4>
+                      <button 
+                        onClick={() => {
+                          const newSections = sections.map(s => {
+                            if (s.id !== activeSection.id) return s;
+                            const newSlides = [...(s.slides || []), {
+                              heading: "New Label", subheading: "", desktopImage: "", mobileImage: "", altText: "", link: "", buttonLabel: "Action"
+                            }];
+                            return { ...s, slides: newSlides };
+                          });
+                          setSections(newSections);
+                        }}
+                        className="text-xs bg-emerald-50 text-emerald-600 px-2 py-1 rounded font-medium hover:bg-emerald-100"
+                      >
                         + Add Slide
                       </button>
                     </div>
@@ -238,38 +304,148 @@ export default function CmsClient({ initialData }: { initialData: any[] }) {
                       <div key={idx} className="border border-slate-200 rounded-lg p-4 bg-slate-50 mb-4 space-y-4">
                         <div className="flex justify-between items-center">
                           <span className="font-medium text-sm text-slate-700">Slide {idx + 1}</span>
-                          <button className="text-red-500 hover:text-red-700 p-1"><Trash2 size={14}/></button>
+                          <button 
+                            onClick={() => {
+                              const newSections = sections.map(s => {
+                                if (s.id !== activeSection.id) return s;
+                                const newSlides = [...(s.slides || [])];
+                                newSlides.splice(idx, 1);
+                                return { ...s, slides: newSlides };
+                              });
+                              setSections(newSections);
+                            }}
+                            className="text-red-500 hover:text-red-700 p-1"
+                          >
+                            <Trash2 size={14}/>
+                          </button>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-xs font-medium text-slate-700 mb-1">Heading</label>
-                            <input type="text" value={slide.heading} className="w-full border border-slate-300 rounded p-2 text-sm" readOnly />
+                            <input 
+                              type="text" 
+                              value={slide.heading || ""} 
+                              onChange={(e) => {
+                                const newSections = sections.map(s => {
+                                  if (s.id !== activeSection.id) return s;
+                                  const newSlides = [...(s.slides || [])];
+                                  newSlides[idx] = { ...newSlides[idx], heading: e.target.value };
+                                  return { ...s, slides: newSlides };
+                                });
+                                setSections(newSections);
+                              }}
+                              className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                            />
                           </div>
                           <div>
                             <label className="block text-xs font-medium text-slate-700 mb-1">Subheading</label>
-                            <input type="text" value={slide.subheading} className="w-full border border-slate-300 rounded p-2 text-sm" readOnly />
+                            <input 
+                              type="text" 
+                              value={slide.subheading || ""} 
+                              onChange={(e) => {
+                                const newSections = sections.map(s => {
+                                  if (s.id !== activeSection.id) return s;
+                                  const newSlides = [...(s.slides || [])];
+                                  newSlides[idx] = { ...newSlides[idx], subheading: e.target.value };
+                                  return { ...s, slides: newSlides };
+                                });
+                                setSections(newSections);
+                              }}
+                              className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                            />
                           </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Button Label</label>
-                            <input type="text" value={slide.buttonLabel} className="w-full border border-slate-300 rounded p-2 text-sm" readOnly />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Button Link</label>
-                            <input type="text" value={slide.link} className="w-full border border-slate-300 rounded p-2 text-sm" readOnly />
-                          </div>
+                          {activeSection.type !== "TRUSTBADGES" && (
+                            <div>
+                              <label className="block text-xs font-medium text-slate-700 mb-1">Button Label</label>
+                              <input 
+                                type="text" 
+                                value={slide.buttonLabel || ""} 
+                                onChange={(e) => {
+                                  const newSections = sections.map(s => {
+                                    if (s.id !== activeSection.id) return s;
+                                    const newSlides = [...(s.slides || [])];
+                                    newSlides[idx] = { ...newSlides[idx], buttonLabel: e.target.value };
+                                    return { ...s, slides: newSlides };
+                                  });
+                                  setSections(newSections);
+                                }}
+                                className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                              />
+                            </div>
+                          )}
+                          {activeSection.type !== "TRUSTBADGES" && (
+                            <div>
+                              <label className="block text-xs font-medium text-slate-700 mb-1">Button Link</label>
+                              <input 
+                                type="text" 
+                                value={slide.link || ""} 
+                                onChange={(e) => {
+                                  const newSections = sections.map(s => {
+                                    if (s.id !== activeSection.id) return s;
+                                    const newSlides = [...(s.slides || [])];
+                                    newSlides[idx] = { ...newSlides[idx], link: e.target.value };
+                                    return { ...s, slides: newSlides };
+                                  });
+                                  setSections(newSections);
+                                }}
+                                className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                              />
+                            </div>
+                          )}
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Desktop Image URL</label>
-                            <input type="text" value={slide.desktopImage} className="w-full border border-slate-300 rounded p-2 text-sm" readOnly />
+                          <div className={activeSection.type === "TRUSTBADGES" ? "col-span-2" : ""}>
+                            <ImageUpload 
+                              label="Desktop Image URL"
+                              value={slide.desktopImage || ""} 
+                              onChange={(url) => {
+                                const newSections = sections.map(s => {
+                                  if (s.id !== activeSection.id) return s;
+                                  const newSlides = [...(s.slides || [])];
+                                  newSlides[idx] = { ...newSlides[idx], desktopImage: url };
+                                  return { ...s, slides: newSlides };
+                                });
+                                setSections(newSections);
+                              }}
+                            />
                           </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Mobile Image URL</label>
-                            <input type="text" value={slide.mobileImage} className="w-full border border-slate-300 rounded p-2 text-sm" readOnly />
-                          </div>
+                          {activeSection.type !== "TRUSTBADGES" && (
+                            <div>
+                              <ImageUpload 
+                                label="Mobile Image URL" 
+                                value={slide.mobileImage || ""} 
+                                onChange={(url) => {
+                                  const newSections = sections.map(s => {
+                                    if (s.id !== activeSection.id) return s;
+                                    const newSlides = [...(s.slides || [])];
+                                    newSlides[idx] = { ...newSlides[idx], mobileImage: url };
+                                    return { ...s, slides: newSlides };
+                                  });
+                                  setSections(newSections);
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {activeSection.type === "RICHCONTENT" && (
+                  <div className="border-t border-slate-200 pt-6 mt-6">
+                    <h4 className="text-sm font-bold text-slate-800 mb-4">Content Image</h4>
+                    <ImageUpload 
+                      label="Rich Content Image"
+                      value={(activeSection as any).content?.image || ""} 
+                      onChange={(url) => {
+                        const newSections = sections.map(s => {
+                          if (s.id !== activeSection.id) return s;
+                          return { ...s, content: { ...((s as any).content || {}), image: url } };
+                        });
+                        setSections(newSections);
+                      }}
+                    />
                   </div>
                 )}
               </div>

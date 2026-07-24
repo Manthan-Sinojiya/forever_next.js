@@ -3,7 +3,7 @@
 import dbConnect from "@/lib/mongodb";
 import { Product } from "@/models/Product";
 import User from "@/models/User";
-// import Order from "@/models/Order"; // Assuming Order model will be created later
+import { Order } from "@/models/Order";
 
 export async function getDashboardMetrics() {
   try {
@@ -13,10 +13,10 @@ export async function getDashboardMetrics() {
     const activeProductsCount = await Product.countDocuments({ status: "active" });
     const totalCustomersCount = await User.countDocuments({ role: { $ne: "admin" } });
     
-    // We mock orders and revenue since the Order model is not defined in this scope yet
-    // In a real scenario, this would aggregate over the Order collection
-    const totalRevenue = 125430.50; // Mocked
-    const totalOrders = 845; // Mocked
+    // Aggregate Revenue and Orders
+    const orders = await Order.find({ paymentStatus: "paid" });
+    const totalOrders = await Order.countDocuments();
+    const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 
     return {
       totalRevenue,
@@ -32,19 +32,21 @@ export async function getDashboardMetrics() {
 
 export async function getRecentOrders() {
   try {
-    // await dbConnect();
-    // In a real app:
-    // const orders = await Order.find().sort({ createdAt: -1 }).limit(5).populate("user", "name email").lean();
-    // return JSON.parse(JSON.stringify(orders));
+    await dbConnect();
     
-    // Mocking 5 recent orders for the UI
-    return [
-      { id: "ORD-001", customer: "John Doe", total: 125.0, status: "completed", date: new Date().toISOString() },
-      { id: "ORD-002", customer: "Jane Smith", total: 45.0, status: "processing", date: new Date().toISOString() },
-      { id: "ORD-003", customer: "Alice Johnson", total: 299.99, status: "shipped", date: new Date().toISOString() },
-      { id: "ORD-004", customer: "Bob Williams", total: 89.5, status: "pending", date: new Date().toISOString() },
-      { id: "ORD-005", customer: "Emma Davis", total: 12.0, status: "completed", date: new Date().toISOString() },
-    ];
+    // Fetch top 5 recent orders
+    const orders = await Order.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean();
+      
+    return orders.map((order: any) => ({
+      id: order.orderNumber,
+      customer: order.shippingAddress?.fullName || order.userEmail || "Guest",
+      total: order.totalAmount || 0,
+      status: order.orderStatus,
+      date: order.createdAt
+    }));
   } catch (error) {
     console.error("Error fetching recent orders:", error);
     throw new Error("Failed to fetch recent orders");

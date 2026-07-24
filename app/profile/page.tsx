@@ -99,6 +99,19 @@ function ProfileContent() {
       return;
     }
 
+    fetch(`/api/profile?email=${encodeURIComponent(email)}`)
+      .then(r => r.json())
+      .then(j => {
+        if (j.success && j.data) {
+          setUserName(j.data.name);
+          setEditName(j.data.name);
+          setEditPhone(j.data.phone || "");
+          localStorage.setItem("userName", j.data.name);
+          if (j.data.phone) localStorage.setItem("userPhone", j.data.phone);
+        }
+      })
+      .catch(console.error);
+
     setOrdersLoading(true);
     fetch(`/api/orders?email=${encodeURIComponent(email)}`)
       .then(r => r.json())
@@ -109,12 +122,24 @@ function ProfileContent() {
 
   const handleSaveProfile = async () => {
     setSavingProfile(true);
-    localStorage.setItem("userName", editName);
-    localStorage.setItem("userPhone", editPhone);
-    setUserName(editName);
-    await new Promise(r => setTimeout(r, 600));
-    setSavingProfile(false);
-    setEditMode(false);
+    try {
+      const res = await fetch(`/api/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail, name: editName, phone: editPhone })
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem("userName", editName);
+        localStorage.setItem("userPhone", editPhone);
+        setUserName(editName);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSavingProfile(false);
+      setEditMode(false);
+    }
   };
 
   const handleLogout = () => {

@@ -61,7 +61,7 @@ export async function createBlog(data: any) {
 export async function updateBlog(id: string, data: any) {
   try {
     await connectDB();
-    const updated = await Blog.findByIdAndUpdate(id, data, { new: true });
+    const updated = await Blog.findByIdAndUpdate(id, data, { returnDocument: 'after' });
     revalidatePath("/admin/blog");
     return { success: true, data: updated?._id.toString() };
   } catch (error) {

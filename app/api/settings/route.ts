@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         const setting = await Setting.findOneAndUpdate(
           { key },
           { value: String(value) },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
         results.push(setting);
       }
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
           const setting = await Setting.findOneAndUpdate(
             { key },
             { value: String(value) },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
           );
           results.push(setting);
         }
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const setting = await Setting.findOneAndUpdate(
       { key },
       { value: String(value) },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
     return NextResponse.json({ success: true, data: setting }, { status: 200 });
   } catch {

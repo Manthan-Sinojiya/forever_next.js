@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateSettings } from "@/actions/admin/settings";
+import toast from "react-hot-toast";
 
 const settingsSchema = z.object({
   storeName: z.string().min(1, "Store name is required"),
@@ -26,6 +27,17 @@ const settingsSchema = z.object({
     bg: z.string().optional(),
     color: z.string().optional(),
   }),
+  shippingConfig: z.object({
+    freeDeliveryThreshold: z.object({
+      enabled: z.boolean(),
+      amount: z.coerce.number().min(0, "Amount must be greater than or equal to 0").optional(),
+    }).optional()
+  }).optional(),
+  razorpay: z.object({
+    enabled: z.boolean(),
+    keyId: z.string().optional(),
+    keySecret: z.string().optional(),
+  }).optional(),
   ui: z.object({
     productCardStyle: z.string(),
     categoryCardStyle: z.string(),
@@ -55,17 +67,28 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
         whatsapp: initialData?.socialLinks?.whatsapp || "",
       },
       announcement: {
-        show: true,
-        text: "100% Ayurvedic | Free Shipping on Orders ₹499+",
-        behavior: "static",
-        bg: "#059669",
-        color: "#ffffff",
+        show: initialData?.announcement?.show ?? true,
+        text: initialData?.announcement?.text || "100% Ayurvedic | Free Shipping on Orders ₹499+",
+        behavior: initialData?.announcement?.behavior || "static",
+        bg: initialData?.announcement?.bg || "#059669",
+        color: initialData?.announcement?.color || "#ffffff",
+      },
+      shippingConfig: {
+        freeDeliveryThreshold: {
+          enabled: initialData?.shippingConfig?.freeDeliveryThreshold?.enabled || false,
+          amount: initialData?.shippingConfig?.freeDeliveryThreshold?.amount || 499,
+        }
+      },
+      razorpay: {
+        enabled: initialData?.razorpay?.enabled || false,
+        keyId: initialData?.razorpay?.keyId || "",
+        keySecret: initialData?.razorpay?.keySecret || "",
       },
       ui: {
-        productCardStyle: "style1",
-        categoryCardStyle: "style1",
-        testimonialStyle: "style1",
-        blogCardStyle: "style1",
+        productCardStyle: initialData?.ui?.productCardStyle || "style1",
+        categoryCardStyle: initialData?.ui?.categoryCardStyle || "style1",
+        testimonialStyle: initialData?.ui?.testimonialStyle || "style1",
+        blogCardStyle: initialData?.ui?.blogCardStyle || "style1",
       }
     }
   });
@@ -74,14 +97,21 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
     setIsSubmitting(true);
     setMessage({ type: "", text: "" });
     try {
-      const res = await updateSettings(data as any);
+      const payload = {
+        ...data,
+        storeEmail: data.supportEmail,
+        storePhone: data.supportPhone,
+        globalMetaTitle: data.seoTitle,
+        globalMetaDescription: data.seoDescription,
+      };
+        const res = await updateSettings(payload);
       if (res.success) {
-        setMessage({ type: "success", text: "Settings updated successfully!" });
+        toast.success("Settings updated successfully!");
       } else {
-        setMessage({ type: "error", text: res.error || "Failed to update settings" });
+        toast.error(res.error || "Failed to update settings");
       }
     } catch {
-      setMessage({ type: "error", text: "An unexpected error occurred" });
+      toast.error("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -94,12 +124,6 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
         <h1 className="text-2xl font-bold text-slate-800">Site Settings</h1>
         <p className="text-sm text-slate-500 mt-1">Manage your store's global configuration and SEO defaults.</p>
       </div>
-
-      {message.text && (
-        <div className={`p-4 rounded-md text-sm border ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
-          {message.text}
-        </div>
-      )}
 
       <div className="grid md:grid-cols-2 gap-6">
         
@@ -214,6 +238,78 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
         </div>
       </div>
 
+      {/* Shipping & Delivery Options */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-800">Shipping & Delivery</h3>
+          <p className="text-sm text-slate-500">Configure automated shipping rules and incentives.</p>
+        </div>
+        
+        <div className="flex items-center justify-between border border-slate-200 rounded-lg p-4 bg-slate-50/50">
+          <div>
+            <div className="font-medium text-slate-800">Free Delivery Threshold</div>
+            <div className="text-sm text-slate-500">Enable automatic free delivery for orders above a certain amount.</div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" {...register("shippingConfig.freeDeliveryThreshold.enabled")} className="sr-only peer" />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Minimum Amount for Free Delivery (₹)</label>
+          <input 
+            type="number" 
+            {...register("shippingConfig.freeDeliveryThreshold.amount")} 
+            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
+            min="0"
+          />
+          {errors.shippingConfig?.freeDeliveryThreshold?.amount && (
+            <p className="text-red-500 text-xs mt-1">{errors.shippingConfig.freeDeliveryThreshold.amount.message}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Payment Gateway (Razorpay) Options */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-800">Payment Integrations</h3>
+          <p className="text-sm text-slate-500">Configure online payment gateways like Razorpay.</p>
+        </div>
+        
+        <div className="flex items-center justify-between border border-slate-200 rounded-lg p-4 bg-slate-50/50">
+          <div>
+            <div className="font-medium text-slate-800">Enable Razorpay Payment Gateway</div>
+            <div className="text-sm text-slate-500">Allow customers to pay via Razorpay (UPI, Credit/Debit cards).</div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" {...register("razorpay.enabled")} className="sr-only peer" />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6 pt-2">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Razorpay Key ID</label>
+            <input 
+              type="text" 
+              {...register("razorpay.keyId")} 
+              placeholder="rzp_test_..."
+              className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Razorpay Key Secret</label>
+            <input 
+              type="password" 
+              {...register("razorpay.keySecret")} 
+              placeholder="••••••••••••"
+              className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" 
+            />
+          </div>
+        </div>
+      </div>
+
       {/* UI Preferences */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
         <div>
@@ -227,6 +323,7 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
             <select {...register("ui.productCardStyle")} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white">
               <option value="style1">style1</option>
               <option value="style2">style2</option>
+              <option value="minimal">minimal</option>
             </select>
           </div>
           <div>
@@ -234,6 +331,7 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
             <select {...register("ui.categoryCardStyle")} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white">
               <option value="style1">style1</option>
               <option value="style2">style2</option>
+              <option value="minimal">minimal</option>
             </select>
           </div>
           <div>
@@ -241,6 +339,7 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
             <select {...register("ui.testimonialStyle")} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white">
               <option value="style1">style1</option>
               <option value="style2">style2</option>
+              <option value="minimal">minimal</option>
             </select>
           </div>
           <div>
@@ -248,6 +347,7 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
             <select {...register("ui.blogCardStyle")} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white">
               <option value="style1">style1</option>
               <option value="style2">style2</option>
+              <option value="minimal">minimal</option>
             </select>
           </div>
         </div>

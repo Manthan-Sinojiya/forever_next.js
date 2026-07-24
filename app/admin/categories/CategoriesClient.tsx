@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { DataTable } from "@/components/admin/DataTable";
 import { deleteCategory } from "@/actions/admin/categories";
 import { Layers } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function CategoriesClient({ initialData, totalPages, initialPage, initialSearch }: any) {
   const router = useRouter();
@@ -53,8 +54,14 @@ export default function CategoriesClient({ initialData, totalPages, initialPage,
 
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
-      await deleteCategory(id);
-      router.refresh();
+      const loadingToast = toast.loading("Deleting category...");
+      try {
+        await deleteCategory(id);
+        toast.success("Category deleted successfully", { id: loadingToast });
+        router.refresh();
+      } catch (error) {
+        toast.error("Failed to delete category", { id: loadingToast });
+      }
     }
   };
 

@@ -11,7 +11,7 @@ export default function NavigationForm({ menu }: { menu: any }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const { register, control, handleSubmit } = useForm({
+  const { register, control, handleSubmit, watch, setValue, getValues } = useForm({
     defaultValues: {
       name: menu.name || "Main Desktop Menu",
       isActive: true,
@@ -116,7 +116,8 @@ export default function NavigationForm({ menu }: { menu: any }) {
           {fields.length === 0 ? (
             <p className="text-sm text-slate-500 italic py-4 text-center">No links added yet. Click "+ Add Root Item" to get started.</p>
           ) : (
-            fields.map((field: any, index) => (
+            fields.map((field: any, index) => {
+              return (
               <div key={field.id} className="border border-slate-200 rounded-lg p-4 bg-slate-50/50">
                 <div className="flex items-center gap-4">
                   <div className="cursor-ns-resize text-slate-400 hover:text-slate-600 transition-colors">
@@ -146,9 +147,9 @@ export default function NavigationForm({ menu }: { menu: any }) {
                 </div>
                 
                 {/* Sub Items Mockup */}
-                {field.subItems && field.subItems.length > 0 && (
+                {watch(`links.${index}.subItems`) && watch(`links.${index}.subItems`).length > 0 && (
                   <div className="mt-3 ml-8 space-y-3">
-                    {field.subItems.map((sub: any, subIndex: number) => (
+                    {watch(`links.${index}.subItems`).map((sub: any, subIndex: number) => (
                       <div key={subIndex} className="flex items-center gap-4">
                         <div className="w-4 h-4 border-l-2 border-b-2 border-slate-300 rounded-bl" />
                         <div className="flex-1 grid grid-cols-2 gap-4">
@@ -168,9 +169,9 @@ export default function NavigationForm({ menu }: { menu: any }) {
                         <button 
                           type="button" 
                           onClick={() => {
-                            const currentField = fields[index] as any;
-                            const newSubItems = currentField.subItems.filter((_: any, i: number) => i !== subIndex);
-                            update(index, { ...currentField, subItems: newSubItems });
+                            const currentSubItems = getValues(`links.${index}.subItems`) || [];
+                            const newSubItems = currentSubItems.filter((_: any, i: number) => i !== subIndex);
+                            setValue(`links.${index}.subItems`, newSubItems);
                           }}
                           className="p-2 text-red-400 hover:text-red-600 transition-colors"
                         >
@@ -185,9 +186,8 @@ export default function NavigationForm({ menu }: { menu: any }) {
                   <button 
                     type="button" 
                     onClick={() => {
-                      const currentField = fields[index] as any;
-                      const newSubItems = [...(currentField.subItems || []), { label: "", url: "" }];
-                      update(index, { ...currentField, subItems: newSubItems });
+                      const currentSubItems = getValues(`links.${index}.subItems`) || [];
+                      setValue(`links.${index}.subItems`, [...currentSubItems, { label: "", url: "" }]);
                     }}
                     className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors"
                   >
@@ -195,7 +195,7 @@ export default function NavigationForm({ menu }: { menu: any }) {
                   </button>
                 </div>
               </div>
-            ))
+            )})
           )}
         </div>
       </div>

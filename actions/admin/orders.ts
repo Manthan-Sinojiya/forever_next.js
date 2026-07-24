@@ -12,7 +12,6 @@ export async function getOrders(search?: string, page: number = 1, limit: number
     
     const total = await Order.countDocuments(query);
     const orders = await Order.find(query)
-      .populate({ path: "user", select: "name email", model: User })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
@@ -37,13 +36,13 @@ export async function updateOrderStatus(id: string, data: any) {
     await connectDB();
     
     // Check old status to see if it changed to shipping
-    const oldOrder = await Order.findById(id).populate({ path: "user", select: "name email", model: User }).lean();
+    const oldOrder = await Order.findById(id).lean();
     
-    const updated = await Order.findByIdAndUpdate(id, data, { new: true });
+    const updated = await Order.findByIdAndUpdate(id, data, { returnDocument: 'after' });
     
     if (oldOrder && oldOrder.orderStatus !== "shipping" && data.orderStatus === "shipping") {
        // Mock email sending
-       console.log(`[EMAIL MOCK] Sending Shipping Email to ${oldOrder.user?.email || "unknown"} for Order #${oldOrder.orderNumber}`);
+       console.log(`[EMAIL MOCK] Sending Shipping Email to ${oldOrder.userEmail || "unknown"} for Order #${oldOrder.orderNumber}`);
        console.log(`[EMAIL MOCK] Tracking Number: ${data.trackingNumber || "N/A"}, Partner: ${data.deliveryPartner || "N/A"}`);
     }
 
@@ -70,7 +69,7 @@ export async function deleteOrder(id: string) {
 export async function getOrderById(id: string) {
   try {
     await connectDB();
-    const order = await Order.findById(id).populate({ path: "user", select: "name email", model: User }).lean();
+    const order = await Order.findById(id).lean();
     if (!order) return { success: false, error: "Order not found" };
     return { success: true, data: JSON.parse(JSON.stringify(order)) };
   } catch (error) {

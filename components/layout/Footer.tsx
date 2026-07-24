@@ -5,45 +5,136 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Mail, Phone, MapPin, Globe, Share2, Users, Heart, ArrowUpRight } from "lucide-react";
 
-const quickLinks = [
-  { href: "/about", label: "About Us" },
-  { href: "/products", label: "Products" },
-  { href: "/profile", label: "My Profile" },
-  { href: "/contact", label: "Contact Us" },
-];
-
-const policies = [
-  { href: "/privacy-policy", label: "Privacy Policy" },
-  { href: "/terms-conditions", label: "Terms & Conditions" },
-  { href: "/refund-policy", label: "Refund Policy" },
-  { href: "/faq", label: "FAQ" },
-];
-
-const socialLinks = [
-  { href: "#", icon: <Globe className="w-4 h-4" />, label: "Website", hoverColor: "hover:bg-blue-500" },
-  { href: "#", icon: <Share2 className="w-4 h-4" />, label: "Social", hoverColor: "hover:bg-pink-500" },
-  { href: "#", icon: <Users className="w-4 h-4" />, label: "Community", hoverColor: "hover:bg-sky-500" },
-  { href: "#", icon: <Heart className="w-4 h-4" />, label: "Support", hoverColor: "hover:bg-red-500" },
-];
-
 export default function Footer() {
   const [categories, setCategories] = useState<{ href: string; label: string }[]>([]);
+  const [quickLinks, setQuickLinks] = useState<{ href: string; label: string }[]>([]);
+  const [policies, setPolicies] = useState<{ href: string; label: string }[]>([]);
+  
+  const [settings, setSettings] = useState<any>({
+    address: "Mumbai, Maharashtra, India",
+    storePhone: "+91 123 456 7890",
+    storeEmail: "support@foreverhealthcare.in",
+    footerAboutText: "India's trusted premium brand providing 100% organic wellness, supplements, and healthcare essentials. Discover Forever Healthcare.",
+    socialLinks: {
+      facebook: "#",
+      instagram: "#",
+      twitter: "#",
+      whatsapp: "#"
+    }
+  });
 
   useEffect(() => {
-    fetch("/api/categories")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.data) {
-          const activeCategories = data.data
-            .filter((c: any) => c.isActive)
-            .map((c: any) => ({
-              href: `/categories/${c.slug}`,
-              label: c.name,
-            }));
-          setCategories(activeCategories.slice(0, 5)); // Show top 5
-        }
-      })
-      .catch((err) => console.error("Error loading categories in footer:", err));
+    // Fetch Settings
+    const cachedSettings = sessionStorage.getItem("footer_settings");
+    if (cachedSettings) {
+      setSettings(JSON.parse(cachedSettings));
+    } else {
+      fetch("/api/settings")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.data)) {
+            if (data.data.length > 0) {
+               const s = data.data[0];
+               if (s.storeEmail) {
+                 setSettings(s);
+                 sessionStorage.setItem("footer_settings", JSON.stringify(s));
+               }
+            }
+          } else if (data.success && data.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
+             setSettings(data.data);
+             sessionStorage.setItem("footer_settings", JSON.stringify(data.data));
+          }
+        })
+        .catch((err) => console.error("Error loading settings:", err));
+    }
+
+    // Fetch Categories
+    const cachedCategories = sessionStorage.getItem("footer_categories");
+    if (cachedCategories) {
+      setCategories(JSON.parse(cachedCategories));
+    } else {
+      fetch("/api/categories")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.data) {
+            const activeCategories = data.data
+              .filter((c: any) => c.isActive)
+              .map((c: any) => ({
+                href: `/categories/${c.slug}`,
+                label: c.name,
+              }));
+            const topCategories = activeCategories.slice(0, 5);
+            setCategories(topCategories);
+            sessionStorage.setItem("footer_categories", JSON.stringify(topCategories));
+          }
+        })
+        .catch((err) => console.error("Error loading categories in footer:", err));
+    }
+
+    // Fetch Quick Links
+    const cachedQuickLinks = sessionStorage.getItem("footer_quick_links");
+    if (cachedQuickLinks) {
+      setQuickLinks(JSON.parse(cachedQuickLinks));
+    } else {
+      fetch("/api/menus/Footer Quick Links")
+        .then(res => res.json())
+        .then(data => {
+           let links = [];
+           if (data.success && data.data?.links) {
+              links = data.data.links.filter((l: any) => l.isActive).sort((a: any, b: any) => a.order - b.order).map((l: any) => ({ href: l.url, label: l.label }));
+           }
+           if (links.length === 0) {
+              links = [
+                { href: "/about", label: "About Us" },
+                { href: "/products", label: "Products" },
+                { href: "/profile", label: "My Profile" },
+                { href: "/contact", label: "Contact Us" },
+              ];
+           }
+           setQuickLinks(links);
+           sessionStorage.setItem("footer_quick_links", JSON.stringify(links));
+        }).catch(() => {
+          setQuickLinks([
+            { href: "/about", label: "About Us" },
+            { href: "/products", label: "Products" },
+            { href: "/profile", label: "My Profile" },
+            { href: "/contact", label: "Contact Us" },
+          ]);
+        });
+    }
+
+    // Fetch Policy Links
+    const cachedPolicies = sessionStorage.getItem("footer_policies");
+    if (cachedPolicies) {
+      setPolicies(JSON.parse(cachedPolicies));
+    } else {
+      fetch("/api/menus/Footer Policy Links")
+        .then(res => res.json())
+        .then(data => {
+           let links = [];
+           if (data.success && data.data?.links) {
+              links = data.data.links.filter((l: any) => l.isActive).sort((a: any, b: any) => a.order - b.order).map((l: any) => ({ href: l.url, label: l.label }));
+           } 
+           if (links.length === 0) {
+              links = [
+                { href: "/privacy-policy", label: "Privacy Policy" },
+                { href: "/terms-conditions", label: "Terms & Conditions" },
+                { href: "/refund-policy", label: "Refund Policy" },
+                { href: "/faq", label: "FAQ" },
+              ];
+           }
+           setPolicies(links);
+           sessionStorage.setItem("footer_policies", JSON.stringify(links));
+        }).catch(() => {
+          setPolicies([
+            { href: "/privacy-policy", label: "Privacy Policy" },
+            { href: "/terms-conditions", label: "Terms & Conditions" },
+            { href: "/refund-policy", label: "Refund Policy" },
+            { href: "/faq", label: "FAQ" },
+          ]);
+        });
+    }
+
   }, []);
 
   return (
@@ -62,8 +153,8 @@ export default function Footer() {
           <div className="lg:col-span-2 space-y-5">
             <Link href="/" className="flex items-center" aria-label="Forever Healthcare Home">
               <Image
-                src="/logo/logo.png"
-                alt="Forever Healthcare"
+                src={settings.logo || "/logo/logo.png"}
+                alt={settings.storeName || "Forever Healthcare"}
                 width={180}
                 height={50}
                 className="h-10 md:h-12 w-auto object-contain brightness-0 invert"
@@ -71,21 +162,31 @@ export default function Footer() {
               />
             </Link>
             <p className="text-white/50 leading-relaxed text-sm max-w-sm">
-              India&apos;s trusted premium brand providing 100% organic wellness, supplements, and healthcare essentials. Discover Forever Healthcare.
+              {settings.footerAboutText || "India's trusted premium brand providing 100% organic wellness, supplements, and healthcare essentials. Discover Forever Healthcare."}
             </p>
 
             {/* Social Links */}
             <div className="flex gap-2 pt-1">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  className={`w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:text-white ${social.hoverColor} hover:border-transparent transition-all duration-300`}
-                  aria-label={social.label}
-                >
-                  {social.icon}
+              {settings.socialLinks?.facebook && (
+                <a href={settings.socialLinks.facebook} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-blue-600 hover:border-transparent transition-all duration-300">
+                  <Globe className="w-4 h-4" />
                 </a>
-              ))}
+              )}
+              {settings.socialLinks?.instagram && (
+                <a href={settings.socialLinks.instagram} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-pink-600 hover:border-transparent transition-all duration-300">
+                  <Share2 className="w-4 h-4" />
+                </a>
+              )}
+              {settings.socialLinks?.twitter && (
+                <a href={settings.socialLinks.twitter} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-sky-500 hover:border-transparent transition-all duration-300">
+                  <Users className="w-4 h-4" />
+                </a>
+              )}
+              {settings.socialLinks?.whatsapp && (
+                <a href={settings.socialLinks.whatsapp} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-green-600 hover:border-transparent transition-all duration-300">
+                  <Heart className="w-4 h-4" />
+                </a>
+              )}
             </div>
           </div>
 
@@ -139,19 +240,19 @@ export default function Footer() {
                 <div className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center shrink-0 mt-0.5">
                   <MapPin className="w-4 h-4 text-medical-light" />
                 </div>
-                <span>Mumbai, Maharashtra, India</span>
+                <span>{settings.address || "Mumbai, Maharashtra, India"}</span>
               </li>
               <li className="flex items-center gap-3 text-sm text-white/40">
                 <div className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center shrink-0">
                   <Phone className="w-4 h-4 text-medical-light" />
                 </div>
-                <span>+91 123 456 7890</span>
+                <span>{settings.storePhone || "+91 123 456 7890"}</span>
               </li>
               <li className="flex items-center gap-3 text-sm text-white/40">
                 <div className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center shrink-0">
                   <Mail className="w-4 h-4 text-medical-light" />
                 </div>
-                <span>support@foreverhealthcare.in</span>
+                <span>{settings.storeEmail || "support@foreverhealthcare.in"}</span>
               </li>
             </ul>
           </div>
@@ -160,8 +261,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-white/[0.06] py-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-white/30">
-            &copy; {new Date().getFullYear()} Forever Healthcare Pvt. Ltd. All
-            rights reserved.
+            &copy; {new Date().getFullYear()} {settings.footerCopyrightText || (settings.storeName ? `${settings.storeName} Pvt. Ltd.` : "Forever Healthcare Pvt. Ltd.")} All rights reserved.
           </p>
           <div className="flex gap-6">
             {policies.map((link) => (

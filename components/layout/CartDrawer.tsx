@@ -109,9 +109,9 @@ export default function CartDrawer() {
                     className="flex gap-4 p-3 rounded-2xl border border-slate-100 hover:border-slate-150 shadow-sm hover:shadow-md transition-all group relative bg-white"
                   >
                     {/* Item Image */}
-                    <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 shrink-0 flex items-center justify-center">
+                    <div className="relative w-20 h-20 bg-slate-50 rounded-xl border border-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center p-2">
                       <Image
-                        src={item.imageUrl}
+                        src={item.imageUrl || "/logo/logo.png"}
                         alt={item.name}
                         fill
                         sizes="80px"

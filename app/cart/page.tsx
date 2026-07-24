@@ -71,28 +71,16 @@ function CartPageContent() {
     };
   }, [session]);
 
-  // Enforce login on checkout parameter
+  // Manage checkout view state based on URL param
   useEffect(() => {
     if (checkoutParam) {
-      const savedEmail = localStorage.getItem("userEmail") || session?.user?.email;
-      if (!savedEmail) {
-        addToast("Please login first to proceed to checkout!", "error");
-        router.push("/login?callbackUrl=/cart?checkout=true");
-      } else {
-        setIsCheckingOut(true);
-      }
+      setIsCheckingOut(true);
     } else {
       setIsCheckingOut(false);
     }
-  }, [checkoutParam, session, router, addToast]);
+  }, [checkoutParam]);
 
   const handleProceedToCheckout = () => {
-    const savedEmail = localStorage.getItem("userEmail") || session?.user?.email;
-    if (!savedEmail) {
-      addToast("Please login first to proceed to checkout!", "error");
-      router.push("/login?callbackUrl=/cart?checkout=true");
-      return;
-    }
     router.push("/cart?checkout=true");
   };
 
@@ -153,7 +141,7 @@ function CartPageContent() {
         body: JSON.stringify({
           userEmail: session?.user?.email || localStorage.getItem("userEmail") || "guest@foreverhealthcare.in",
           items: cart.map(item => ({
-            productId: item._id,
+            productId: item._id.substring(0, 24),
             name: item.name,
             price: item.price,
             quantity: item.quantity,
@@ -282,8 +270,7 @@ function CartPageContent() {
       }
     } catch (err: any) {
       console.error("Online checkout initiation failed:", err);
-      addToast("Failed to initiate online checkout. Falling back to checkout simulator.", "error");
-      setShowPaymentModal(true);
+      addToast(err.message || "Failed to initiate online checkout. Please try again.", "error");
     } finally {
       setLoading(false);
     }
